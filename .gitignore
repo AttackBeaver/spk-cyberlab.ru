@@ -1,0 +1,20 @@
+# Node
+node_modules/
+npm-debug.log*
+.env
+.DS_Store
+dist/
+build/
+
+# Docker
+*.pid
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
