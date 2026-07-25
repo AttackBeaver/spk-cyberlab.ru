@@ -1,0 +1,194 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+// Роли пользователей
+enum Role {
+  GUEST
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+// Модель пользователя
+model User {
+  id             Int          @id @default(autoincrement())
+  username       String?      @unique  // может быть null до регистрации
+  email          String?      @unique
+  passwordHash   String?      // null до активации
+  fullName       String
+  role           Role         @default(STUDENT)
+  group          Group?       @relation(fields: [groupId], references: [id])
+  groupId        Int?
+  studentNumber  Int?         // номер по списку
+  createdAt      DateTime     @default(now())
+  lastLogin      DateTime?    @updatedAt
+  // связи
+  taskAttempts   TaskAttempt[]
+  memes          Meme[]
+  achievements   UserAchievement[]
+  createdCourses Course[]     @relation("TeacherCourses")
+  sandboxSessions SandboxSession[]
+  logs           Log[]
+}
+
+// Группа студентов
+model Group {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  prefix       String?  // для генерации логинов (например, "ip224")
+  year         Int
+  students     User[]
+  createdAt    DateTime @default(now())
+}
+
+// Курс
+model Course {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  teacherId    Int
+  teacher      User     @relation("TeacherCourses", fields: [teacherId], references: [id])
+  modules      Module[]
+  createdAt    DateTime @default(now())
+}
+
+// Модуль
+model Module {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  order        Int
+  courseId     Int
+  course       Course   @relation(fields: [courseId], references: [id])
+  topics       Topic[]
+}
+
+// Тема
+model Topic {
+  id           Int      @id @default(autoincrement())
+  title        String
+  content      String?
+  order        Int
+  moduleId     Int
+  module       Module   @relation(fields: [moduleId], references: [id])
+  tasks        Task[]
+}
+
+// Задание
+model Task {
+  id               Int            @id @default(autoincrement())
+  title            String
+  description      String
+  type             TaskType
+  solutionTemplate String?
+  difficulty       Int            @default(1)
+  timeLimit        Int?
+  attemptsLimit    Int?
+  topicId          Int
+  topic            Topic          @relation(fields: [topicId], references: [id])
+  attempts         TaskAttempt[]
+  sandboxSessions  SandboxSession[]
+}
+
+enum TaskType {
+  TEXT
+  SQL_INJECTION
+  XSS
+  CRYPTO_ANALYSIS
+  CODE
+}
+
+// Попытки выполнения задания
+model TaskAttempt {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  taskId       Int
+  task         Task          @relation(fields: [taskId], references: [id])
+  answer       String?
+  score        Float?
+  status       AttemptStatus @default(PENDING)
+  startedAt    DateTime      @default(now())
+  completedAt  DateTime?
+}
+
+enum AttemptStatus {
+  PENDING
+  PASSED
+  FAILED
+  TIME_EXPIRED
+}
+
+// Сессии песочницы
+model SandboxSession {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  taskId       Int
+  task         Task          @relation(fields: [taskId], references: [id])
+  containerId  String?
+  status       SandboxStatus @default(ACTIVE)
+  startedAt    DateTime      @default(now())
+  expiredAt    DateTime?
+}
+
+enum SandboxStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+}
+
+// Мемы
+model Meme {
+  id           Int        @id @default(autoincrement())
+  title        String
+  imageUrl     String
+  category     String?
+  authorId     Int
+  author       User       @relation(fields: [authorId], references: [id])
+  approved     Boolean    @default(false)
+  approvedBy   Int?
+  createdAt    DateTime   @default(now())
+  likes        Int        @default(0)
+  dislikes     Int        @default(0)
+}
+
+// Достижения
+model Achievement {
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String
+  icon             String
+  criteria         String?
+  userAchievements UserAchievement[]
+}
+
+// Связь пользователь-достижение
+model UserAchievement {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  achievementId  Int
+  achievement    Achievement  @relation(fields: [achievementId], references: [id])
+  earnedAt       DateTime     @default(now())
+}
+
+// Логи
+model Log {
+  id           Int      @id @default(autoincrement())
+  userId       Int?
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String
+  details      String?
+  ip           String?
+  createdAt    DateTime @default(now())
+}
