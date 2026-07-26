@@ -13,6 +13,7 @@ import taskRoutes from './routes/taskRoutes';
 import taskRootRoutes from './routes/taskRootRoutes';
 import memeRoutes from './routes/memeRoutes';
 import profileRoutes from './routes/profileRoutes';
+import newsRoutes from './routes/newsRoutes';
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use('/api/topics/:topicId/tasks', taskRoutes);
 app.use('/api/tasks', taskRootRoutes);
 app.use('/api/memes', memeRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/news', newsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });

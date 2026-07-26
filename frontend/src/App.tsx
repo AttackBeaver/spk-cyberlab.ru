@@ -12,6 +12,10 @@ import TaskPage from './pages/TaskPage';
 import TeacherCourseEdit from './pages/TeacherCourseEdit';
 import Memes from './pages/Memes';
 import Profile from './pages/Profile';
+import About from './pages/About';
+import Contacts from './pages/Contacts';
+import FAQ from './pages/FAQ';
+import News from './pages/News';
 
 function App() {
   const { user, loading } = useAuth();
@@ -34,6 +38,10 @@ function App() {
         <Route path="/teacher/course/:courseId/edit" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourseEdit /> : <Navigate to="/" />} />
         <Route path="/memes" element={<Memes />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contacts" element={<Contacts />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/news" element={<News />} />
       </Routes>
     </BrowserRouter>
   );

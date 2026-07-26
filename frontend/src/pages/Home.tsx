@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Layout from '../components/Layout';
+import LatestNews from '../components/LatestNews';
 
 const Home = () => {
   const { user } = useAuth();
@@ -40,9 +41,15 @@ const Home = () => {
               <p className="text-sm text-gray-500">Основы машинного обучения и нейросетей</p>
             </div>
           </div>
+          
+          {/* Блок последних новостей (гостевая версия) */}
+          <div className="mt-12 max-w-4xl mx-auto">
+            <LatestNews />
+          </div>
+
           <div className="mt-8">
             <Link to="/memes" className="text-blue-600 hover:underline text-lg">
-              Посмотреть IT-мемы →
+              Посмотреть мемы →
             </Link>
           </div>
         </div>
@@ -88,6 +95,11 @@ const Home = () => {
           <h3 className="text-lg font-semibold">Мемы</h3>
           <p className="text-gray-500 text-sm">IT-юмор и мемы</p>
         </Link>
+      </div>
+
+      {/* Блок последних новостей (авторизованная версия) */}
+      <div className="mt-8">
+        <LatestNews />
       </div>
     </Layout>
   );

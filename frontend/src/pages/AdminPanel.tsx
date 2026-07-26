@@ -30,6 +30,17 @@ interface Course {
   createdAt: string;
 }
 
+interface NewsItem {
+  id: number;
+  title: string;
+  content: string;
+  imageUrl: string | null;
+  published: boolean;
+  author: { fullName: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
 const AdminPanel = () => {
   const { user } = useAuth();
 
@@ -51,10 +62,45 @@ const AdminPanel = () => {
   const [teacherFullName, setTeacherFullName] = useState('');
   const [teacherPassword, setTeacherPassword] = useState('');
 
-  // Загрузка данных для просмотра
+  // Состояния для сброса пароля
+  const [resetUsername, setResetUsername] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+
+  // Состояния для новостей
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState('');
+  const [showNewsForm, setShowNewsForm] = useState(false);
+  const [editingNewsId, setEditingNewsId] = useState<number | null>(null);
+  const [newsTitle, setNewsTitle] = useState('');
+  const [newsContent, setNewsContent] = useState('');
+  const [newsImageUrl, setNewsImageUrl] = useState('');
+  const [newsFormError, setNewsFormError] = useState('');
+  const [newsFormSuccess, setNewsFormSuccess] = useState('');
+
+  // --- Загрузка новостей (объявлена до useEffect) ---
+  const fetchNews = async () => {
+    setNewsLoading(true);
+    setNewsError('');
+    try {
+      const res = await api.get('/news');
+      setNews(res.data);
+    } catch (err) {
+      let errorMsg = 'Ошибка загрузки новостей';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        errorMsg = errObj.response?.data?.error || errorMsg;
+      }
+      setNewsError(errorMsg);
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+
+  // --- useEffect (теперь fetchNews объявлена) ---
   useEffect(() => {
-    if (activeTab === 'groups' || activeTab === 'users' || activeTab === 'courses') {
-      const fetchData = async () => {
+    const loadData = async () => {
+      if (activeTab === 'groups' || activeTab === 'users' || activeTab === 'courses') {
         setLoading(true);
         setMessage('');
         try {
@@ -78,12 +124,26 @@ const AdminPanel = () => {
         } finally {
           setLoading(false);
         }
-      };
-      fetchData();
-    }
+      }
+      if (activeTab === 'news') {
+        await fetchNews();
+      }
+    };
+    loadData();
   }, [activeTab]);
 
-  // Обработчики форм
+  // --- Остальные функции (обработчики) ---
+
+  const resetNewsForm = () => {
+    setNewsTitle('');
+    setNewsContent('');
+    setNewsImageUrl('');
+    setEditingNewsId(null);
+    setNewsFormError('');
+    setNewsFormSuccess('');
+    setShowNewsForm(false);
+  };
+
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -152,17 +212,76 @@ const AdminPanel = () => {
     }
   };
 
-  // Обработчик сброса пароля для пользователя (админ)
-  const handleResetPasswordForUser = async (username: string) => {
-    if (!confirm(`Сбросить пароль для пользователя ${username} до стандартного (123456)?`)) return;
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       await api.post('/admin/reset-password', {
-        username: username,
-        newPassword: '123456',
+        username: resetUsername,
+        newPassword: resetNewPassword,
       });
-      setMessage(`✅ Пароль для ${username} сброшен до 123456`);
+      setMessage('✅ Пароль успешно сброшен');
+      setResetUsername('');
+      setResetNewPassword('');
     } catch (err) {
       let errorMsg = 'Ошибка сброса пароля';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        errorMsg = errObj.response?.data?.error || errorMsg;
+      }
+      setMessage(errorMsg);
+    }
+  };
+
+  // --- Обработчики новостей ---
+  const handleEditNews = (item: NewsItem) => {
+    setEditingNewsId(item.id);
+    setNewsTitle(item.title);
+    setNewsContent(item.content);
+    setNewsImageUrl(item.imageUrl || '');
+    setShowNewsForm(true);
+    setNewsFormError('');
+    setNewsFormSuccess('');
+  };
+
+  const handleSubmitNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsFormError('');
+    setNewsFormSuccess('');
+
+    if (!newsTitle || !newsContent) {
+      setNewsFormError('Название и содержание обязательны');
+      return;
+    }
+
+    try {
+      const payload = { title: newsTitle, content: newsContent, imageUrl: newsImageUrl || null };
+      if (editingNewsId) {
+        await api.put(`/news/${editingNewsId}`, payload);
+        setNewsFormSuccess('✅ Новость обновлена');
+      } else {
+        await api.post('/news', payload);
+        setNewsFormSuccess('✅ Новость создана');
+      }
+      resetNewsForm();
+      await fetchNews();
+    } catch (err) {
+      let errorMsg = 'Ошибка сохранения новости';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        errorMsg = errObj.response?.data?.error || errorMsg;
+      }
+      setNewsFormError(errorMsg);
+    }
+  };
+
+  const handleDeleteNews = async (id: number) => {
+    if (!confirm('Удалить эту новость?')) return;
+    try {
+      await api.delete(`/news/${id}`);
+      setMessage('✅ Новость удалена');
+      await fetchNews();
+    } catch (err) {
+      let errorMsg = 'Ошибка удаления новости';
       if (err && typeof err === 'object' && 'response' in err) {
         const errObj = err as { response?: { data?: { error?: string } } };
         errorMsg = errObj.response?.data?.error || errorMsg;
@@ -207,6 +326,12 @@ const AdminPanel = () => {
           onClick={() => setActiveTab('courses')}
         >
           Курсы
+        </button>
+        <button
+          className={`py-2 px-4 font-medium whitespace-nowrap ${activeTab === 'news' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+          onClick={() => setActiveTab('news')}
+        >
+          Новости
         </button>
       </div>
 
@@ -273,6 +398,22 @@ const AdminPanel = () => {
               <button type="submit" className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Создать преподавателя</button>
             </form>
           </div>
+
+          {/* Сброс пароля */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">Сброс пароля пользователя</h2>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">Логин или Email пользователя</label>
+                <input type="text" value={resetUsername} onChange={(e) => setResetUsername(e.target.value)} className="w-full border rounded px-3 py-2" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Новый пароль</label>
+                <input type="password" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className="w-full border rounded px-3 py-2" required minLength={6} />
+              </div>
+              <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">Сбросить пароль</button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -305,35 +446,10 @@ const AdminPanel = () => {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? <div className="text-center py-12">Загрузка...</div> : users.length === 0 ? <p className="p-6 text-gray-500">Пользователи не найдены</p> : (
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действие</th>
-                </tr>
-              </thead>
+              <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th></tr></thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {users.map((u) => (
-                  <tr key={u.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.username || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.fullName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.groupId || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleResetPasswordForUser(u.username)}
-                        className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-xs"
-                      >
-                        Сбросить пароль
-                      </button>
-                    </td>
-                  </tr>
+                  <tr key={u.id}><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.id}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.username || '-'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.fullName}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.role}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.groupId || '-'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -352,6 +468,112 @@ const AdminPanel = () => {
                 ))}
               </tbody>
             </table>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'news' && (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Управление новостями</h2>
+            <button
+              onClick={() => {
+                resetNewsForm();
+                setShowNewsForm(true);
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              + Создать новость
+            </button>
+          </div>
+
+          {newsFormSuccess && <div className="bg-green-100 text-green-700 p-3 rounded mb-4">{newsFormSuccess}</div>}
+          {newsFormError && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{newsFormError}</div>}
+
+          {showNewsForm && (
+            <div className="bg-white p-6 rounded-lg shadow mb-6">
+              <h3 className="text-lg font-semibold mb-4">{editingNewsId ? 'Редактировать новость' : 'Создать новость'}</h3>
+              <form onSubmit={handleSubmitNews} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium">Название</label>
+                  <input
+                    type="text"
+                    value={newsTitle}
+                    onChange={(e) => setNewsTitle(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Содержание</label>
+                  <textarea
+                    value={newsContent}
+                    onChange={(e) => setNewsContent(e.target.value)}
+                    rows={5}
+                    className="w-full border rounded px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Ссылка на изображение (необязательно)</label>
+                  <input
+                    type="text"
+                    value={newsImageUrl}
+                    onChange={(e) => setNewsImageUrl(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    {editingNewsId ? 'Обновить' : 'Создать'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetNewsForm}
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {newsLoading ? (
+            <div className="text-center py-8">Загрузка...</div>
+          ) : newsError ? (
+            <div className="text-red-500 text-center py-8">{newsError}</div>
+          ) : news.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Новостей пока нет</p>
+          ) : (
+            <div className="space-y-4">
+              {news.map((item) => (
+                <div key={item.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{item.title}</h3>
+                    <p className="text-gray-600 text-sm line-clamp-2">{item.content}</p>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {item.author.fullName} • {new Date(item.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 ml-4">
+                    <button
+                      onClick={() => handleEditNews(item)}
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      Редактировать
+                    </button>
+                    <button
+                      onClick={() => handleDeleteNews(item.id)}
+                      className="text-red-600 hover:underline text-sm"
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

@@ -10,11 +10,25 @@ interface UserStats {
   achievements: { id: number; name: string; description: string; icon: string; earnedAt: string }[];
 }
 
+interface TaskHistoryItem {
+  id: number;
+  taskTitle: string;
+  courseTitle: string;
+  score: number | null;
+  status: string;
+  completedAt: string | null;
+}
+
 const Profile = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Состояния для истории заданий
+  const [history, setHistory] = useState<TaskHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState('');
 
   // Состояния для смены пароля
   const [oldPassword, setOldPassword] = useState('');
@@ -35,6 +49,20 @@ const Profile = () => {
       }
     };
     if (user) fetchStats();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await api.get('/profile/history');
+        setHistory(res.data);
+      } catch {
+        setHistoryError('Ошибка загрузки истории');
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+    if (user) fetchHistory();
   }, [user]);
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -74,9 +102,10 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Личный кабинет</h1>
 
+        {/* Информация о пользователе */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-center space-x-4">
             <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-3xl font-bold text-blue-600">
@@ -92,7 +121,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Форма смены пароля */}
+        {/* Смена пароля */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h3 className="text-xl font-semibold mb-4">Смена пароля</h3>
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
@@ -138,6 +167,7 @@ const Profile = () => {
           </form>
         </div>
 
+        {/* Статистика */}
         {loading ? (
           <div className="text-center py-8">Загрузка статистики...</div>
         ) : error ? (
@@ -159,8 +189,9 @@ const Profile = () => {
               </div>
             </div>
 
+            {/* Достижения */}
             {stats.achievements.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-6 mb-6">
                 <h3 className="text-xl font-semibold mb-4">Достижения</h3>
                 <div className="flex flex-wrap gap-3">
                   {stats.achievements.map((ach) => (
@@ -174,6 +205,63 @@ const Profile = () => {
             )}
           </>
         ) : null}
+
+        {/* История выполненных заданий */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-xl font-semibold mb-4">История выполненных заданий</h3>
+          {historyLoading ? (
+            <div className="text-center py-4">Загрузка истории...</div>
+          ) : historyError ? (
+            <div className="text-red-500 text-center py-4">{historyError}</div>
+          ) : history.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">Вы ещё не выполнили ни одного задания</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Задание</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Курс</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Оценка</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {history.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-4 py-2 text-sm text-gray-900">{item.taskTitle}</td>
+                      <td className="px-4 py-2 text-sm text-gray-500">{item.courseTitle}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900">
+                        {item.score !== null ? `${item.score}%` : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            item.status === 'PASSED'
+                              ? 'bg-green-100 text-green-800'
+                              : item.status === 'FAILED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {item.status === 'PASSED'
+                            ? '✅ Выполнено'
+                            : item.status === 'FAILED'
+                            ? '❌ Неверно'
+                            : '⏳ Ожидает проверки'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-500">
+                        {item.completedAt ? new Date(item.completedAt).toLocaleDateString() : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

@@ -38,6 +38,7 @@ model User {
   createdCourses Course[]     @relation("TeacherCourses")
   sandboxSessions SandboxSession[]
   logs           Log[]
+  news           News[]
 }
 
 // Группа студентов
@@ -191,4 +192,17 @@ model Log {
   details      String?
   ip           String?
   createdAt    DateTime @default(now())
+}
+
+// Новости
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  imageUrl  String?
+  published Boolean  @default(false)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

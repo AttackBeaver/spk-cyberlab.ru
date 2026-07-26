@@ -76,7 +76,6 @@ export const getLeaderboard = async (req: Request, res: Response) => {
   res.json(result);
 };
 
-// Новая функция: смена пароля
 export const changePassword = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
   const { oldPassword, newPassword } = req.body;
@@ -89,7 +88,6 @@ export const changePassword = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Новый пароль должен содержать не менее 6 символов' });
   }
 
-  // Найти пользователя
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -98,13 +96,11 @@ export const changePassword = async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Пользователь не найден' });
   }
 
-  // Проверить старый пароль
   const isValid = await bcrypt.compare(oldPassword, user.passwordHash || '');
   if (!isValid) {
     return res.status(401).json({ error: 'Неверный старый пароль' });
   }
 
-  // Хешировать новый пароль и обновить
   const hashed = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({
     where: { id: userId },
@@ -112,4 +108,41 @@ export const changePassword = async (req: Request, res: Response) => {
   });
 
   res.json({ message: 'Пароль успешно изменён' });
+};
+
+// Новая функция: история выполненных заданий
+export const getTaskHistory = async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+
+  const attempts = await prisma.taskAttempt.findMany({
+    where: { userId },
+    include: {
+      task: {
+        include: {
+          topic: {
+            include: {
+              module: {
+                include: {
+                  course: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { completedAt: 'desc' },
+    take: 50,
+  });
+
+  const history = attempts.map((attempt) => ({
+    id: attempt.id,
+    taskTitle: attempt.task.title,
+    courseTitle: attempt.task.topic.module.course.title,
+    score: attempt.score,
+    status: attempt.status,
+    completedAt: attempt.completedAt,
+  }));
+
+  res.json(history);
 };

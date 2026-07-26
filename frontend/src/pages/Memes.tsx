@@ -159,7 +159,7 @@ const Memes = () => {
   return (
     <Layout>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">IT-мемы</h1>
+        <h1 className="text-2xl font-bold">Мемы</h1>
         <div className="space-x-2">
           {user && (
             <button
