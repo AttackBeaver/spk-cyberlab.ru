@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma';
+import { awardAchievement } from '../utils/achievementUtils';
 
 // Регистрация студента
 export const registerStudent = async (req: Request, res: Response) => {
   const { groupId, studentNumber, password, fullName } = req.body;
 
-  // Проверяем, существует ли группа
   const group = await prisma.group.findUnique({
     where: { id: Number(groupId) },
   });
@@ -15,7 +15,6 @@ export const registerStudent = async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Группа не найдена' });
   }
 
-  // Ищем студента по номеру в группе
   const existingUser = await prisma.user.findFirst({
     where: {
       groupId: Number(groupId),
@@ -27,18 +26,13 @@ export const registerStudent = async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Студент с таким номером не найден в этой группе' });
   }
 
-  // Если студент уже зарегистрирован (имеет пароль)
   if (existingUser.passwordHash) {
     return res.status(400).json({ error: 'Этот студент уже зарегистрирован' });
   }
 
-  // Генерируем логин по правилу: prefix + номер (например, ip224-07)
   const username = `${group.prefix || group.name}-${String(studentNumber).padStart(2, '0')}`;
-
-  // Хешируем пароль
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Обновляем пользователя: добавляем пароль, логин, ФИО (если не заполнено)
   const updatedUser = await prisma.user.update({
     where: { id: existingUser.id },
     data: {
@@ -48,7 +42,9 @@ export const registerStudent = async (req: Request, res: Response) => {
     },
   });
 
-  // Генерируем JWT токен
+  // Выдаём достижение за регистрацию
+  await awardAchievement(updatedUser.id, 'Первый шаг');
+
   const token = jwt.sign(
     { id: updatedUser.id, username: updatedUser.username, role: updatedUser.role },
     process.env.JWT_SECRET as string,
@@ -70,12 +66,11 @@ export const registerStudent = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
-  // Ищем пользователя по username или email
   const user = await prisma.user.findFirst({
     where: {
       OR: [
         { username: username },
-        { email: username }, // можно войти по email, если указан
+        { email: username },
       ],
     },
   });

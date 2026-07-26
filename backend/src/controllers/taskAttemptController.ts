@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
+import { checkAndAwardAchievements } from '../utils/achievementUtils';
 
 export const createAttempt = async (req: Request, res: Response) => {
   const { taskId } = req.params;
-  const { answer, userId } = req.body;
+  const { answer } = req.body;
+  const userId = (req as any).user.id;
 
   try {
     // Получаем задание с шаблоном решения
@@ -18,20 +20,24 @@ export const createAttempt = async (req: Request, res: Response) => {
     // Простая проверка: сравниваем с шаблоном (для TEXT)
     let score = 0;
     let message = 'Ответ неверный';
+    let status = 'FAILED';
+
     if (task.solutionTemplate) {
-      // Приводим к нижнему регистру для регистронезависимого сравнения
       const isMatch = answer.toLowerCase().trim() === task.solutionTemplate.toLowerCase().trim();
       if (isMatch) {
         score = 100;
         message = '✅ Правильно! Отлично!';
+        status = 'PASSED';
       } else {
         score = 0;
         message = '❌ Неправильно. Попробуйте ещё раз.';
+        status = 'FAILED';
       }
     } else {
       // Если нет шаблона, просто сохраняем ответ (для ручной проверки)
       message = 'Ответ сохранён. Ожидайте проверки преподавателем.';
-      score = 0; // или null
+      score = 0;
+      status = 'PENDING';
     }
 
     // Сохраняем попытку в БД
@@ -41,10 +47,15 @@ export const createAttempt = async (req: Request, res: Response) => {
         taskId: Number(taskId),
         answer,
         score: score > 0 ? score : null,
-        status: score > 0 ? 'PASSED' : 'FAILED',
+        status: status as any,
         completedAt: new Date(),
       },
     });
+
+    // Если задание выполнено успешно, проверяем достижения
+    if (status === 'PASSED') {
+      await checkAndAwardAchievements(Number(userId));
+    }
 
     res.json({
       attemptId: attempt.id,
