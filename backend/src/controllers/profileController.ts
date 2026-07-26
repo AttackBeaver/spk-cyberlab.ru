@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
 import prisma from '../utils/prisma';
 
 export const getProfileStats = async (req: Request, res: Response) => {
@@ -19,6 +20,7 @@ export const getProfileStats = async (req: Request, res: Response) => {
     include: { achievement: true },
     orderBy: { earnedAt: 'desc' },
   });
+
   const achievements = userAchievements.map((ua) => ({
     id: ua.achievement.id,
     name: ua.achievement.name,
@@ -36,7 +38,7 @@ export const getProfileStats = async (req: Request, res: Response) => {
 };
 
 export const getLeaderboard = async (req: Request, res: Response) => {
-  const users = await prisma.user.findMany({
+  const leaderboard = await prisma.user.findMany({
     select: {
       id: true,
       fullName: true,
@@ -46,25 +48,68 @@ export const getLeaderboard = async (req: Request, res: Response) => {
         where: { status: 'PASSED' },
         select: { score: true },
       },
+      _count: {
+        select: { taskAttempts: { where: { status: 'PASSED' } } },
+      },
     },
+    orderBy: {
+      taskAttempts: {
+        _count: 'desc',
+      },
+    },
+    take: 20,
   });
 
-  const result = users
-    .map((user) => {
-      const totalScore = user.taskAttempts.reduce((sum, ta) => sum + (ta.score || 0), 0);
-      const count = user.taskAttempts.length;
-      const avgScore = count > 0 ? Math.round(totalScore / count) : 0;
-      return {
-        id: user.id,
-        fullName: user.fullName,
-        username: user.username,
-        role: user.role,
-        tasksCompleted: count,
-        averageScore: avgScore,
-      };
-    })
-    .sort((a, b) => b.tasksCompleted - a.tasksCompleted || b.averageScore - a.averageScore)
-    .slice(0, 20);
+  const result = leaderboard.map((user) => {
+    const totalScore = user.taskAttempts.reduce((sum, ta) => sum + (ta.score || 0), 0);
+    const avgScore = user.taskAttempts.length > 0 ? Math.round(totalScore / user.taskAttempts.length) : 0;
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      username: user.username,
+      role: user.role,
+      tasksCompleted: user._count.taskAttempts,
+      averageScore: avgScore,
+    };
+  });
 
   res.json(result);
+};
+
+// Новая функция: смена пароля
+export const changePassword = async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'Не указаны старый или новый пароль' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Новый пароль должен содержать не менее 6 символов' });
+  }
+
+  // Найти пользователя
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    return res.status(404).json({ error: 'Пользователь не найден' });
+  }
+
+  // Проверить старый пароль
+  const isValid = await bcrypt.compare(oldPassword, user.passwordHash || '');
+  if (!isValid) {
+    return res.status(401).json({ error: 'Неверный старый пароль' });
+  }
+
+  // Хешировать новый пароль и обновить
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: hashed },
+  });
+
+  res.json({ message: 'Пароль успешно изменён' });
 };

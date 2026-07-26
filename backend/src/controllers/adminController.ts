@@ -72,16 +72,32 @@ export const createTeacher = async (req: Request, res: Response) => {
   }
 };
 
-// Сброс пароля (только ADMIN)
+// Сброс пароля (для администратора)
 export const resetPassword = async (req: Request, res: Response) => {
-  const { userId, newPassword } = req.body;
-  const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
-  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  const { username, newPassword } = req.body;
+  if (!username || !newPassword) {
+    return res.status(400).json({ error: 'Не указаны логин или новый пароль' });
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username },
+        { email: username },
+      ],
+    },
+  });
+
+  if (!user) {
+    return res.status(404).json({ error: 'Пользователь не найден' });
+  }
+
   const hashed = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({
-    where: { id: Number(userId) },
+    where: { id: user.id },
     data: { passwordHash: hashed },
   });
+
   res.json({ message: 'Пароль сброшен' });
 };
 

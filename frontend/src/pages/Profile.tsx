@@ -16,6 +16,13 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Состояния для смены пароля
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -29,6 +36,39 @@ const Profile = () => {
     };
     if (user) fetchStats();
   }, [user]);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Новые пароли не совпадают');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Новый пароль должен быть не менее 6 символов');
+      return;
+    }
+
+    try {
+      await api.post('/auth/change-password', {
+        oldPassword,
+        newPassword,
+      });
+      setPasswordSuccess('✅ Пароль успешно изменён');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      let msg = 'Ошибка смены пароля';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        msg = errObj.response?.data?.error || msg;
+      }
+      setPasswordError(msg);
+    }
+  };
 
   if (!user) return <Layout><div className="text-center py-8">Пожалуйста, войдите</div></Layout>;
 
@@ -50,6 +90,52 @@ const Profile = () => {
               {user.studentNumber && <p className="text-gray-600">Номер по списку: {user.studentNumber}</p>}
             </div>
           </div>
+        </div>
+
+        {/* Форма смены пароля */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 className="text-xl font-semibold mb-4">Смена пароля</h3>
+          <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+            <div>
+              <label className="block text-sm font-medium">Текущий пароль</label>
+              <input
+                type="password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Новый пароль</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                required
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Подтвердите новый пароль</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                required
+              />
+            </div>
+            {passwordError && <div className="text-red-500 text-sm">{passwordError}</div>}
+            {passwordSuccess && <div className="text-green-500 text-sm">{passwordSuccess}</div>}
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Сменить пароль
+            </button>
+          </form>
         </div>
 
         {loading ? (

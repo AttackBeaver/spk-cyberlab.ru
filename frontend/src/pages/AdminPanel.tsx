@@ -152,6 +152,25 @@ const AdminPanel = () => {
     }
   };
 
+  // Обработчик сброса пароля для пользователя (админ)
+  const handleResetPasswordForUser = async (username: string) => {
+    if (!confirm(`Сбросить пароль для пользователя ${username} до стандартного (123456)?`)) return;
+    try {
+      await api.post('/admin/reset-password', {
+        username: username,
+        newPassword: '123456',
+      });
+      setMessage(`✅ Пароль для ${username} сброшен до 123456`);
+    } catch (err) {
+      let errorMsg = 'Ошибка сброса пароля';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        errorMsg = errObj.response?.data?.error || errorMsg;
+      }
+      setMessage(errorMsg);
+    }
+  };
+
   if (user?.role !== 'ADMIN') {
     return <div className="p-8 text-red-500">Доступ запрещён. Только для администратора.</div>;
   }
@@ -193,7 +212,7 @@ const AdminPanel = () => {
 
       {activeTab === 'manage' && (
         <div className="space-y-6">
-          {/* Формы создания группы, добавления студентов, создания преподавателя (как раньше) */}
+          {/* Создание группы */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Создать группу</h2>
             <form onSubmit={handleCreateGroup} className="space-y-4">
@@ -213,6 +232,7 @@ const AdminPanel = () => {
             </form>
           </div>
 
+          {/* Добавление студентов */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Добавить студентов в группу</h2>
             <form onSubmit={handleAddStudents} className="space-y-4">
@@ -230,6 +250,7 @@ const AdminPanel = () => {
             </form>
           </div>
 
+          {/* Создание преподавателя */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Создать преподавателя</h2>
             <form onSubmit={handleCreateTeacher} className="space-y-4">
@@ -284,10 +305,35 @@ const AdminPanel = () => {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? <div className="text-center py-12">Загрузка...</div> : users.length === 0 ? <p className="p-6 text-gray-500">Пользователи не найдены</p> : (
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th></tr></thead>
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действие</th>
+                </tr>
+              </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {users.map((u) => (
-                  <tr key={u.id}><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.id}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.username || '-'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.fullName}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.role}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.groupId || '-'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td></tr>
+                  <tr key={u.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.username || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.fullName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.role}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.groupId || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => handleResetPasswordForUser(u.username)}
+                        className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-xs"
+                      >
+                        Сбросить пароль
+                      </button>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
