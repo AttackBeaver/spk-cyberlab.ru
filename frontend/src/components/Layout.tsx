@@ -45,6 +45,11 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                     <Link to="/register" className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm">Регистрация</Link>
                   </>
                 )}
+                {user && (
+                  <Link to="/profile" className="text-gray-600 hover:text-blue-600">
+                    <span className="text-sm">👤 Профиль</span>
+                  </Link>
+                )}
               </>
             )}
           </div>

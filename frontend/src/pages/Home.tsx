@@ -39,6 +39,11 @@ const Home = () => {
               <p className="text-sm text-gray-500">Основы машинного обучения и нейросетей</p>
             </div>
           </div>
+          <div className="mt-8">
+            <Link to="/memes" className="text-blue-600 hover:underline text-lg">
+              Посмотреть IT-мемы →
+            </Link>
+          </div>
         </div>
       </Layout>
     );
@@ -76,6 +81,12 @@ const Home = () => {
             <p className="text-gray-500 text-sm">Управление пользователями и группами</p>
           </Link>
         )}
+
+        <Link to="/memes" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition flex flex-col items-center text-center">
+          <div className="text-4xl mb-2">😂</div>
+          <h3 className="text-lg font-semibold">Мемы</h3>
+          <p className="text-gray-500 text-sm">IT-юмор и мемы</p>
+        </Link>
       </div>
     </Layout>
   );
