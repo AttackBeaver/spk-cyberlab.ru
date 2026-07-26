@@ -85,3 +85,25 @@ export const deleteCourse = async (req: Request, res: Response) => {
   await prisma.course.delete({ where: { id: Number(id) } });
   res.status(204).send();
 };
+
+export const getTeacherCourses = async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const courses = await prisma.course.findMany({
+    where: { teacherId: userId },
+    include: { teacher: { select: { fullName: true, email: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(courses);
+};
+
+export const getMyCourses = async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const courses = await prisma.course.findMany({
+    where: { teacherId: userId },
+    include: {
+      teacher: { select: { fullName: true, email: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(courses);
+};

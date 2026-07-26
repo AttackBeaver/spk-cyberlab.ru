@@ -84,3 +84,38 @@ export const resetPassword = async (req: Request, res: Response) => {
   });
   res.json({ message: 'Пароль сброшен' });
 };
+
+// Получить всех пользователей (с группами)
+export const getAllUsers = async (req: Request, res: Response) => {
+  const users = await prisma.user.findMany({
+    include: {
+      group: true,
+    },
+    orderBy: { id: 'asc' },
+  });
+  res.json(users);
+};
+
+// Получить все группы с количеством студентов
+export const getAllGroups = async (req: Request, res: Response) => {
+  const groups = await prisma.group.findMany({
+    include: {
+      students: {
+        select: { id: true, fullName: true, studentNumber: true, username: true, email: true },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+  res.json(groups);
+};
+
+// Получить все курсы (с преподавателями)
+export const getAllCourses = async (req: Request, res: Response) => {
+  const courses = await prisma.course.findMany({
+    include: {
+      teacher: { select: { id: true, fullName: true, email: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(courses);
+};

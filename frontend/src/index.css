@@ -1,3 +1,14 @@
+/* Подключение шрифта Cascadia Code с CDN */
+@import url('https://fonts.cdnfonts.com/css/cascadia-code');
+
+/* Базовые стили Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Применяем шрифт ко всем элементам */
+@layer base {
+  body {
+    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  }
+}

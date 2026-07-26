@@ -1,30 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminPanel from './pages/AdminPanel';
+import Home from './pages/Home';
+import Courses from './pages/Courses';
+import TeacherCourses from './pages/TeacherCourses';
 import { useAuth } from './hooks/useAuth';
-
-const Home = () => {
-  const { user, logout } = useAuth();
-  return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold">Добро пожаловать, {user?.fullName}!</h1>
-      <p className="mt-2">Роль: {user?.role}</p>
-      <p className="mt-2">Логин: {user?.username}</p>
-      {user?.role === 'ADMIN' && (
-        <Link to="/admin" className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded">
-          Админ-панель
-        </Link>
-      )}
-      <button
-        onClick={logout}
-        className="mt-4 ml-4 bg-red-500 text-white px-4 py-2 rounded"
-      >
-        Выйти
-      </button>
-    </div>
-  );
-};
+import Layout from './components/Layout';
+import CourseDetails from './pages/CourseDetails';
+import TaskPage from './pages/TaskPage';
+import TeacherCourseEdit from './pages/TeacherCourseEdit';
 
 function App() {
   const { user, loading } = useAuth();
@@ -38,8 +23,13 @@ function App() {
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-        <Route path="/admin" element={user?.role === 'ADMIN' ? <AdminPanel /> : <Navigate to="/" />} />
-        <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/courses" element={user ? <Courses /> : <Navigate to="/login" />} />
+        <Route path="/teacher/courses" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourses /> : <Navigate to="/" />} />
+        <Route path="/admin" element={user?.role === 'ADMIN' ? <Layout><AdminPanel /></Layout> : <Navigate to="/" />} />
+        <Route path="/course/:id" element={user ? <CourseDetails /> : <Navigate to="/login" />} />
+        <Route path="/task/:taskId" element={user ? <TaskPage /> : <Navigate to="/login" />} />
+        <Route path="/teacher/course/:courseId/edit" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourseEdit /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

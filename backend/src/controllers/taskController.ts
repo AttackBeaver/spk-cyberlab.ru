@@ -79,3 +79,19 @@ export const deleteTask = async (req: Request, res: Response) => {
   await prisma.task.delete({ where: { id: Number(id) } });
   res.status(204).send();
 };
+
+export const getTaskById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!task) {
+      return res.status(404).json({ error: 'Задание не найдено' });
+    }
+    res.json(task);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка загрузки задания' });
+  }
+};
