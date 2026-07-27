@@ -29,9 +29,9 @@ import ServerError from './pages/ServerError';
 import BugBounty from './pages/BugBounty';
 import SandboxTasks from './pages/SandboxTasks';
 import TaskExecution from './pages/TaskExecution';
-
-const SandboxTeacher = () => <div className="p-8 text-center">Управление заданиями (в разработке)</div>;
-
+import TeacherSandbox from './pages/TeacherSandbox';
+import SandboxPreview from './pages/SandboxPreview';
+import TeacherSandboxSQLCreator from './pages/TeacherSandboxSQLCreator';
 
 function App() {
   const { user, loading } = useAuth();
@@ -71,7 +71,10 @@ function App() {
         <Route path="/bug-bounty" element={user ? <BugBounty /> : <Navigate to="/login" />} />
         <Route path="/sandbox" element={user ? <SandboxTasks /> : <Navigate to="/login" />} />
         <Route path="/sandbox/task/:taskId/attempt/:attemptId" element={user ? <TaskExecution /> : <Navigate to="/login" />} />
-        <Route path="/teacher/sandbox" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <SandboxTeacher /> : <Navigate to="/" />} />
+        <Route path="/teacher/sandbox" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandbox /> : <Navigate to="/" />} />
+        <Route path="/sandbox/preview/:taskId" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <SandboxPreview /> : <Navigate to="/" />} />
+        <Route path="/teacher/sandbox/sql/create" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}/>
+        <Route path="/teacher/sandbox/sql/edit/:taskId" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}/>
       </Routes>
     </BrowserRouter>
   );

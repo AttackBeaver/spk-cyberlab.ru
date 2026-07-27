@@ -16,6 +16,7 @@ import profileRoutes from './routes/profileRoutes';
 import newsRoutes from './routes/newsRoutes';
 import bugReportRoutes from './routes/bugReportRoutes';
 import sandboxRoutes from './routes/sandboxRoutes';
+import sandboxTemplateRoutes from './routes/sandboxTemplateRoutes';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/bug-reports', bugReportRoutes);
 app.use('/api/sandbox', sandboxRoutes);
+app.use('/api/sandbox/templates', sandboxTemplateRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });

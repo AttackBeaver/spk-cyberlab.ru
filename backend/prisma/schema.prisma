@@ -42,6 +42,8 @@ model User {
   // === Добавлено для полигона ===
   sandboxTasksCreated SandboxTask[]      // задания, созданные преподавателем/админом
   sandboxAttempts     SandboxAttempt[]   // попытки выполнения заданий студентом
+  // --- НОВОЕ: проверенные отчёты ---
+  sandboxReportsReviewed SandboxStudentReport[] @relation("Reviewer")
 }
 
 model Group {
@@ -277,6 +279,8 @@ model SandboxTask {
   instructions  String?
   type          SandboxTaskType     @default(CUSTOM)
   answerTemplate String?            // шаблон правильного ответа для CUSTOM
+  htmlTemplate  String?             // HTML-макет для интерактивных заданий
+  expectedResult String?            // ожидаемый результат (текст после успешной атаки)
   difficulty    Int                 @default(1)
   timeLimit     Int?
   attemptsLimit Int?
@@ -285,10 +289,20 @@ model SandboxTask {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
+  // ---- НОВЫЕ ПОЛЯ ----
+  templateId    Int?                // ссылка на шаблон
+  config        Json?               // JSON-конфиг (структура БД, поля, etc.)
+  hint          String?             // подсказка
+  expectedReport String?            // эталонный отчёт для автоматической проверки
+  isManualReview Boolean            @default(false) // требует ручной проверки
+  // -----------------
+
   creator       User                @relation(fields: [createdBy], references: [id])
   groups        SandboxTaskGroup[]
   attempts      SandboxAttempt[]
   environments  SandboxEnvironment[]
+  // ---- Связь с шаблоном ----
+  template      SandboxTemplate?    @relation(fields: [templateId], references: [id])
 }
 
 enum SandboxTaskType {
@@ -297,6 +311,7 @@ enum SandboxTaskType {
   PHISHING
   CODE
   CUSTOM
+  DATABASE   // новое: работа с БД
 }
 
 model SandboxTaskGroup {
@@ -324,6 +339,8 @@ model SandboxAttempt {
   completedAt DateTime?
 
   session     SandboxRunSession?
+  // ---- НОВОЕ: связь с отчётом ----
+  report      SandboxStudentReport?
 }
 
 enum SandboxAttemptStatus {
@@ -365,4 +382,35 @@ enum SandboxRunStatus {
   ACTIVE
   COMPLETED
   EXPIRED
+}
+
+// ===== НОВЫЕ МОДЕЛИ =====
+
+// Шаблоны заданий
+model SandboxTemplate {
+  id            Int                 @id @default(autoincrement())
+  name          String              @unique
+  description   String
+  type          SandboxTaskType
+  configSchema  Json                // JSON-схема для настройки
+  defaultConfig Json                // базовый конфиг
+  previewHtml   String?             // HTML-макет для предпросмотра
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  tasks         SandboxTask[]       // задания, созданные из этого шаблона
+}
+
+// Отчёт студента (для ручной проверки)
+model SandboxStudentReport {
+  id            Int                 @id @default(autoincrement())
+  attemptId     Int                 @unique
+  attempt       SandboxAttempt      @relation(fields: [attemptId], references: [id])
+  text          String              // текст отчёта
+  score         Float?              // оценка преподавателя
+  reviewedBy    Int?                // id преподавателя, проверившего
+  reviewer      User?               @relation("Reviewer", fields: [reviewedBy], references: [id])
+  reviewedAt    DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }

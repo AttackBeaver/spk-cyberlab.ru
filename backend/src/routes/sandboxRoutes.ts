@@ -16,6 +16,11 @@ import {
 } from '../controllers/sandboxExecutionController';
 import { authenticate } from '../middleware/auth';
 import { allowRoles } from '../middleware/roleCheck';
+import {
+  initSqlTask,
+  executeSqlQuery,
+  closeSqlTask,
+} from '../controllers/sandboxSqlController';
 
 const router = Router();
 
@@ -36,5 +41,9 @@ router.post('/tasks/:taskId/start', startAttempt);
 router.post('/tasks/:taskId/submit', submitAttempt);
 router.get('/my-attempts', getMyAttempts);
 router.get('/attempts/:attemptId', getAttemptDetails);
+
+router.post('/tasks/:taskId/sql/init', initSqlTask);
+router.post('/tasks/:taskId/sql/execute', executeSqlQuery);
+router.post('/tasks/:taskId/sql/close', closeSqlTask);
 
 export default router;

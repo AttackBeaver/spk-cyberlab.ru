@@ -93,6 +93,8 @@ export const createTask = async (req: Request, res: Response) => {
     timeLimit,
     attemptsLimit,
     points,
+    htmlTemplate,
+    expectedResult,
   } = req.body;
 
   if (!title || !description) {
@@ -109,6 +111,8 @@ export const createTask = async (req: Request, res: Response) => {
       timeLimit: timeLimit || null,
       attemptsLimit: attemptsLimit || null,
       points: points || 0,
+      htmlTemplate: htmlTemplate || null,
+      expectedResult: expectedResult || null,
       createdBy: user.id,
     },
   });
@@ -133,6 +137,8 @@ export const updateTask = async (req: Request, res: Response) => {
     timeLimit,
     attemptsLimit,
     points,
+    htmlTemplate,
+    expectedResult,
   } = req.body;
 
   const existing = await prisma.sandboxTask.findUnique({
@@ -157,6 +163,8 @@ export const updateTask = async (req: Request, res: Response) => {
       timeLimit,
       attemptsLimit,
       points,
+      htmlTemplate: htmlTemplate || null,
+      expectedResult: expectedResult || null,
     },
   });
 
@@ -194,30 +202,26 @@ export const assignTaskToGroups = async (req: Request, res: Response) => {
   }
 
   const { id } = req.params;
-  const { groupIds } = req.body; // массив чисел
+  const { groupIds } = req.body;
 
   if (!groupIds || !Array.isArray(groupIds) || groupIds.length === 0) {
     return res.status(400).json({ error: 'Укажите хотя бы одну группу' });
   }
 
-  // Проверяем существование задания
   const task = await prisma.sandboxTask.findUnique({
     where: { id: Number(id) },
     select: { createdBy: true },
   });
   if (!task) return res.status(404).json({ error: 'Задание не найдено' });
 
-  // Проверяем права
   if (user.role !== 'ADMIN' && task.createdBy !== user.id) {
     return res.status(403).json({ error: 'Вы не можете назначать это задание' });
   }
 
-  // Удаляем старые назначения (если нужна полная замена)
   await prisma.sandboxTaskGroup.deleteMany({
     where: { taskId: Number(id) },
   });
 
-  // Создаём новые назначения
   const assignments = groupIds.map((groupId: number) => ({
     taskId: Number(id),
     groupId,

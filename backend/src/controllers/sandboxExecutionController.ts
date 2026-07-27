@@ -1,6 +1,14 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 
+// Тип для задачи при проверке
+interface TaskForCheck {
+  type: string;
+  answerTemplate: string | null;
+  expectedResult: string | null;
+  points: number;
+}
+
 // ===== Проверка доступа студента к заданию =====
 const checkTaskAccess = async (taskId: number, userId: number): Promise<boolean> => {
   const user = await prisma.user.findUnique({
@@ -26,7 +34,6 @@ const checkLimits = async (taskId: number, userId: number) => {
   });
   if (!task) throw new Error('Задание не найдено');
 
-  // Проверка попыток
   if (task.attemptsLimit !== null) {
     const attemptsCount = await prisma.sandboxAttempt.count({
       where: {
@@ -40,7 +47,6 @@ const checkLimits = async (taskId: number, userId: number) => {
     }
   }
 
-  // Проверка времени (если есть активная попытка)
   const activeAttempt = await prisma.sandboxAttempt.findFirst({
     where: {
       taskId,
@@ -64,8 +70,18 @@ const checkLimits = async (taskId: number, userId: number) => {
 };
 
 // ===== Логика проверки ответа =====
-const checkAnswer = (task: any, answer: string): { score: number; feedback: string } => {
-  // Для CUSTOM – проверка по шаблону
+const checkAnswer = (task: TaskForCheck, answer: string): { score: number; feedback: string } => {
+  // 1. Проверка ожидаемого результата (для интерактивных заданий)
+  if (task.expectedResult) {
+    const containsExpected = answer.toLowerCase().includes(task.expectedResult.toLowerCase());
+    if (containsExpected) {
+      return { score: 100, feedback: '✅ Ожидаемый результат обнаружен! Задание выполнено.' };
+    } else {
+      return { score: 0, feedback: '❌ Ожидаемый результат не найден. Попробуйте ещё раз.' };
+    }
+  }
+
+  // 2. Для CUSTOM – проверка по шаблону
   if (task.type === 'CUSTOM' && task.answerTemplate) {
     const isCorrect = answer.trim().toLowerCase() === task.answerTemplate.trim().toLowerCase();
     return {
@@ -74,24 +90,29 @@ const checkAnswer = (task: any, answer: string): { score: number; feedback: stri
     };
   }
 
-  // SQL_INJECTION – эмуляция
+  // 3. SQL_INJECTION – расширенная проверка
   if (task.type === 'SQL_INJECTION') {
-    const dangerous = ['--', ';', "'", '"', 'DROP', 'DELETE', 'UPDATE', 'INSERT'];
-    const hasDanger = dangerous.some(kw => answer.toUpperCase().includes(kw));
-    if (hasDanger) {
-      return {
-        score: 100,
-        feedback: '✅ Вы обнаружили уязвимость! SQL-инъекция успешно выполнена.',
-      };
+    const sqlPatterns = [
+      /' OR '1'='1/, /" OR "1"="1/, /' OR 1=1/, /" OR 1=1/,
+      /;.*DROP\s+TABLE/i, /;.*DELETE\s+FROM/i, /;.*UPDATE/i,
+      /UNION\s+SELECT/i, /--/, /#/, /\/\*.*\*\//,
+      /OR\s+1=1/, /OR\s+1=1--/,
+      /';\s*DROP\s+TABLE/i, /'; DROP TABLE/i,
+    ];
+    const found = sqlPatterns.some(pattern => pattern.test(answer));
+    if (found) {
+      return { score: 100, feedback: '✅ SQL-инъекция обнаружена!' };
     } else {
-      return {
-        score: 0,
-        feedback: '❌ В запросе нет признаков SQL-инъекции. Попробуйте использовать специальные символы.',
-      };
+      const hasQuote = answer.includes("'") || answer.includes('"');
+      const hasSQLKeyword = /\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\b/i.test(answer);
+      if (hasQuote && hasSQLKeyword) {
+        return { score: 50, feedback: '⚠️ Частичное совпадение: похоже на SQL-инъекцию, но недостаточно.' };
+      }
+      return { score: 0, feedback: '❌ В запросе нет признаков SQL-инъекции. Попробуйте использовать OR, UNION, комментарии или специальные символы.' };
     }
   }
 
-  // XSS – поиск тегов
+  // 4. XSS – поиск тегов
   if (task.type === 'XSS') {
     const xssPatterns = ['<script>', 'onerror=', 'alert(', 'javascript:'];
     const found = xssPatterns.some(p => answer.toLowerCase().includes(p));
@@ -101,7 +122,7 @@ const checkAnswer = (task: any, answer: string): { score: number; feedback: stri
     };
   }
 
-  // CODE, PHISHING и др. – заглушка
+  // 5. CODE, PHISHING и др. – заглушка
   return {
     score: 0,
     feedback: '⏳ Этот тип задания пока не поддерживается автоматической проверкой.',
@@ -126,11 +147,12 @@ export const startAttempt = async (req: Request, res: Response) => {
         message: 'Продолжите выполнение начатой попытки',
         attemptId: activeAttempt.id,
         startedAt: activeAttempt.startedAt,
-        remainingTime: null, // можно рассчитать позже
+        remainingTime: null,
       });
     }
-  } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+  } catch (error) {
+    const err = error as Error;
+    return res.status(400).json({ error: err.message });
   }
 
   const attempt = await prisma.sandboxAttempt.create({
@@ -177,7 +199,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
   const task = await prisma.sandboxTask.findUnique({
     where: { id: Number(taskId) },
-    select: { type: true, answerTemplate: true, points: true },
+    select: { type: true, answerTemplate: true, points: true, expectedResult: true },
   });
   if (!task) return res.status(404).json({ error: 'Задание не найдено' });
 

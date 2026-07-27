@@ -206,32 +206,56 @@ const AdminPanel = () => {
     }
   };
 
-  const handleAddStudents = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const students = studentsInput.split('\n')
-        .filter(line => line.trim())
-        .map(line => {
-          const parts = line.trim().split('\t');
-          return { fullName: parts[0]?.trim() || '', studentNumber: parseInt(parts[1]?.trim() || '0') };
-        })
-        .filter(s => s.fullName && s.studentNumber > 0);
-      if (students.length === 0) {
-        setMessage('❌ Введите данные в формате: ФИО\tНомер (каждый студент с новой строки)');
-        return;
-      }
-      await api.post('/admin/students', { groupId: parseInt(selectedGroupId), students });
-      setMessage(`✅ Добавлено ${students.length} студентов`);
-      setStudentsInput('');
-    } catch (err) {
-      let errorMsg = 'Ошибка добавления студентов';
-      if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as { response?: { data?: { error?: string } } };
-        errorMsg = errObj.response?.data?.error || errorMsg;
-      }
-      setMessage(errorMsg);
+const handleAddStudents = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const students = studentsInput.split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        // Пытаемся разделить по табуляции, если нет – по пробелам
+        let parts: string[];
+        if (line.includes('\t')) {
+          parts = line.trim().split('\t');
+        } else {
+          // Разделяем по пробелам, но учитываем, что ФИО может содержать пробелы
+          // Ищем последний пробел – за ним номер
+          const lastSpaceIdx = line.lastIndexOf(' ');
+          if (lastSpaceIdx === -1) {
+            // Если пробелов нет – ошибка
+            return null;
+          }
+          const name = line.substring(0, lastSpaceIdx).trim();
+          const number = line.substring(lastSpaceIdx + 1).trim();
+          if (!name || !number) return null;
+          return { fullName: name, studentNumber: parseInt(number) };
+        }
+        if (parts.length >= 2) {
+          const name = parts[0].trim();
+          const number = parts[1].trim();
+          if (name && number) {
+            return { fullName: name, studentNumber: parseInt(number) };
+          }
+        }
+        return null;
+      })
+      .filter(s => s !== null && s.fullName && s.studentNumber > 0);
+
+    if (students.length === 0) {
+      setMessage('❌ Введите данные в формате: ФИО\tНомер или ФИО Номер (каждый студент с новой строки)');
+      return;
     }
-  };
+    await api.post('/admin/students', { groupId: parseInt(selectedGroupId), students });
+    setMessage(`✅ Добавлено ${students.length} студентов`);
+    setStudentsInput('');
+  } catch (err) {
+    let errorMsg = 'Ошибка добавления студентов';
+    if (err && typeof err === 'object' && 'response' in err) {
+      const errObj = err as { response?: { data?: { error?: string } } };
+      errorMsg = errObj.response?.data?.error || errorMsg;
+    }
+    setMessage(errorMsg);
+  }
+};
 
   const handleCreateTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
