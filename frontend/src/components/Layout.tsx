@@ -33,7 +33,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
             <Link to="/" className="text-gray-700 hover:text-blue-600">Главная</Link>
             <Link to="/directions" className="text-gray-700 hover:text-blue-600">Направления</Link>
             <Link to="/courses" className="text-gray-700 hover:text-blue-600">Курсы</Link>
-            <Link to="/ctf-polygon" className="text-gray-700 hover:text-blue-600">CTF-полигон</Link>
+            <Link to="/sandbox" className="text-gray-700 hover:text-blue-600">Полигон</Link>
             <Link to="/memes" className="text-gray-700 hover:text-blue-600">Мемы</Link>
             <Link to="/bug-bounty" className="text-gray-700 hover:text-blue-600">Bug Bounty</Link>
 
@@ -86,7 +86,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
               <Link to="/" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Главная</Link>
               <Link to="/directions" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Направления</Link>
               <Link to="/courses" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Курсы</Link>
-              <Link to="/ctf-polygon" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>CTF-полигон</Link>
+              <Link to="/sandbox" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Полигон</Link>
               <Link to="/memes" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Мемы</Link>
               <Link to="/bug-bounty" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Bug Bounty</Link>
               {user ? (
@@ -144,7 +144,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
               <h3 className="font-semibold text-gray-700 mb-2">Ресурсы</h3>
               <ul className="space-y-1">
                 <li><Link to="/virtual-labs" className="text-gray-500 hover:text-blue-600">Виртуальные лаборатории</Link></li>
-                <li><Link to="/ctf-polygon" className="text-gray-500 hover:text-blue-600">CTF-полигон</Link></li>
+                <li><Link to="/sandbox" className="text-gray-500 hover:text-blue-600">Полигон</Link></li>
                 <li><Link to="/knowledge" className="text-gray-500 hover:text-blue-600">База знаний</Link></li>
                 <li><Link to="/memes" className="text-gray-500 hover:text-blue-600">Мемы</Link></li>
                 <li><Link to="/bug-bounty" className="text-gray-500 hover:text-blue-600">Bug Bounty</Link></li>

@@ -22,12 +22,16 @@ import Practicums from './pages/Practicums';
 import Labs from './pages/Labs';
 import Testing from './pages/Testing';
 import VirtualLabs from './pages/VirtualLabs';
-import CTFPolygon from './pages/CTFPolygon';
 import Knowledge from './pages/Knowledge';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import ServerError from './pages/ServerError';
 import BugBounty from './pages/BugBounty';
+import SandboxTasks from './pages/SandboxTasks';
+import TaskExecution from './pages/TaskExecution';
+
+const SandboxTeacher = () => <div className="p-8 text-center">Управление заданиями (в разработке)</div>;
+
 
 function App() {
   const { user, loading } = useAuth();
@@ -60,12 +64,14 @@ function App() {
         <Route path="/labs" element={<Labs />} />
         <Route path="/testing" element={<Testing />} />
         <Route path="/virtual-labs" element={<VirtualLabs />} />
-        <Route path="/ctf-polygon" element={<CTFPolygon />} />
         <Route path="/knowledge" element={<Knowledge />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/500" element={<ServerError />} />
         <Route path="/bug-bounty" element={user ? <BugBounty /> : <Navigate to="/login" />} />
+        <Route path="/sandbox" element={user ? <SandboxTasks /> : <Navigate to="/login" />} />
+        <Route path="/sandbox/task/:taskId/attempt/:attemptId" element={user ? <TaskExecution /> : <Navigate to="/login" />} />
+        <Route path="/teacher/sandbox" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <SandboxTeacher /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

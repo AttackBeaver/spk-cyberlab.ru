@@ -38,7 +38,10 @@ model User {
   news           News[]
   bugReports      BugReport[]     @relation("UserBugReports")
   bugReportsResponded BugReport[] @relation("ResponderBugReports")
-  memeVotes      MemeVote[]   // <--- добавлено
+  memeVotes      MemeVote[]
+  // === Добавлено для полигона ===
+  sandboxTasksCreated SandboxTask[]      // задания, созданные преподавателем/админом
+  sandboxAttempts     SandboxAttempt[]   // попытки выполнения заданий студентом
 }
 
 model Group {
@@ -48,6 +51,8 @@ model Group {
   year         Int
   students     User[]
   createdAt    DateTime @default(now())
+  // === Добавлено для полигона ===
+  sandboxTaskGroups SandboxTaskGroup[]
 }
 
 model Course {
@@ -153,7 +158,7 @@ model Meme {
   createdAt    DateTime   @default(now())
   likes        Int        @default(0)
   dislikes     Int        @default(0)
-  votes        MemeVote[] // <--- добавлено
+  votes        MemeVote[]
 }
 
 model Achievement {
@@ -261,4 +266,103 @@ model MemeVote {
 enum VoteType {
   LIKE
   DISLIKE
+}
+
+// ===== Полигон-песочница =====
+
+model SandboxTask {
+  id            Int                 @id @default(autoincrement())
+  title         String
+  description   String
+  instructions  String?
+  type          SandboxTaskType     @default(CUSTOM)
+  answerTemplate String?            // шаблон правильного ответа для CUSTOM
+  difficulty    Int                 @default(1)
+  timeLimit     Int?
+  attemptsLimit Int?
+  points        Int                 @default(0)
+  createdBy     Int
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  creator       User                @relation(fields: [createdBy], references: [id])
+  groups        SandboxTaskGroup[]
+  attempts      SandboxAttempt[]
+  environments  SandboxEnvironment[]
+}
+
+enum SandboxTaskType {
+  SQL_INJECTION
+  XSS
+  PHISHING
+  CODE
+  CUSTOM
+}
+
+model SandboxTaskGroup {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      SandboxTask @relation(fields: [taskId], references: [id])
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id])
+  assignedAt DateTime @default(now())
+
+  @@unique([taskId, groupId])
+}
+
+model SandboxAttempt {
+  id          Int              @id @default(autoincrement())
+  taskId      Int
+  task        SandboxTask      @relation(fields: [taskId], references: [id])
+  userId      Int
+  user        User             @relation(fields: [userId], references: [id])
+  answer      String?
+  score       Float?
+  status      SandboxAttemptStatus @default(PENDING)
+  feedback    String?
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+
+  session     SandboxRunSession?
+}
+
+enum SandboxAttemptStatus {
+  PENDING
+  PASSED
+  FAILED
+  TIME_EXPIRED
+}
+
+model SandboxEnvironment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      SandboxTask @relation(fields: [taskId], references: [id])
+  type      SandboxEnvType @default(SQL)
+  image     String?
+  parameters Json?
+
+  @@unique([taskId])
+}
+
+enum SandboxEnvType {
+  SQL
+  JS
+  PYTHON
+  CMD
+}
+
+model SandboxRunSession {
+  id          Int      @id @default(autoincrement())
+  attemptId   Int      @unique
+  attempt     SandboxAttempt @relation(fields: [attemptId], references: [id])
+  containerId String?
+  status      SandboxRunStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+}
+
+enum SandboxRunStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
 }
