@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -18,10 +16,9 @@ enum Role {
   ADMIN
 }
 
-// Модель пользователя
 model User {
   id             Int          @id @default(autoincrement())
-  username       String?      @unique  // может быть null до регистрации
+  username       String?      @unique
   email          String?      @unique
   passwordHash   String?      // null до активации
   fullName       String
@@ -39,19 +36,20 @@ model User {
   sandboxSessions SandboxSession[]
   logs           Log[]
   news           News[]
+  bugReports      BugReport[]     @relation("UserBugReports")
+  bugReportsResponded BugReport[] @relation("ResponderBugReports")
+  memeVotes      MemeVote[]   // <--- добавлено
 }
 
-// Группа студентов
 model Group {
   id           Int      @id @default(autoincrement())
   name         String   @unique
-  prefix       String?  // для генерации логинов (например, "ip224")
+  prefix       String?
   year         Int
   students     User[]
   createdAt    DateTime @default(now())
 }
 
-// Курс
 model Course {
   id           Int      @id @default(autoincrement())
   title        String
@@ -62,7 +60,6 @@ model Course {
   createdAt    DateTime @default(now())
 }
 
-// Модуль
 model Module {
   id           Int      @id @default(autoincrement())
   title        String
@@ -73,7 +70,6 @@ model Module {
   topics       Topic[]
 }
 
-// Тема
 model Topic {
   id           Int      @id @default(autoincrement())
   title        String
@@ -84,7 +80,6 @@ model Topic {
   tasks        Task[]
 }
 
-// Задание
 model Task {
   id               Int            @id @default(autoincrement())
   title            String
@@ -108,7 +103,6 @@ enum TaskType {
   CODE
 }
 
-// Попытки выполнения задания
 model TaskAttempt {
   id           Int           @id @default(autoincrement())
   userId       Int
@@ -129,7 +123,6 @@ enum AttemptStatus {
   TIME_EXPIRED
 }
 
-// Сессии песочницы
 model SandboxSession {
   id           Int           @id @default(autoincrement())
   userId       Int
@@ -148,12 +141,11 @@ enum SandboxStatus {
   EXPIRED
 }
 
-// Мемы
 model Meme {
   id           Int        @id @default(autoincrement())
   title        String
   imageUrl     String
-  category     String?
+  category     MemeCategory?  @default(OTHER)
   authorId     Int
   author       User       @relation(fields: [authorId], references: [id])
   approved     Boolean    @default(false)
@@ -161,9 +153,9 @@ model Meme {
   createdAt    DateTime   @default(now())
   likes        Int        @default(0)
   dislikes     Int        @default(0)
+  votes        MemeVote[] // <--- добавлено
 }
 
-// Достижения
 model Achievement {
   id               Int               @id @default(autoincrement())
   name             String
@@ -173,7 +165,6 @@ model Achievement {
   userAchievements UserAchievement[]
 }
 
-// Связь пользователь-достижение
 model UserAchievement {
   id             Int          @id @default(autoincrement())
   userId         Int
@@ -183,7 +174,6 @@ model UserAchievement {
   earnedAt       DateTime     @default(now())
 }
 
-// Логи
 model Log {
   id           Int      @id @default(autoincrement())
   userId       Int?
@@ -194,7 +184,6 @@ model Log {
   createdAt    DateTime @default(now())
 }
 
-// Новости
 model News {
   id        Int      @id @default(autoincrement())
   title     String
@@ -205,4 +194,71 @@ model News {
   author    User     @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BugReport {
+  id            Int             @id @default(autoincrement())
+  title         String
+  description   String
+  steps         String?
+  severity      BugSeverity     @default(MEDIUM)
+  category      BugCategory?
+  status        BugStatus       @default(NEW)
+  userId        Int
+  user          User            @relation("UserBugReports", fields: [userId], references: [id])
+  adminResponse String?
+  respondedBy   Int?
+  responder     User?           @relation("ResponderBugReports", fields: [respondedBy], references: [id])
+  respondedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum BugSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BugCategory {
+  UI
+  SECURITY
+  PERFORMANCE
+  OTHER
+}
+
+enum BugStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  WONTFIX
+  CLOSED
+}
+
+enum MemeCategory {
+  PHOTO
+  VIDEO
+  OTHER
+}
+
+model MemeVote {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  memeId    Int
+  meme      Meme      @relation(fields: [memeId], references: [id])
+  voteType  VoteType
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, memeId])
+}
+
+enum VoteType {
+  LIKE
+  DISLIKE
 }

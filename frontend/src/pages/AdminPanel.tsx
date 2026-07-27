@@ -41,6 +41,20 @@ interface NewsItem {
   updatedAt: string;
 }
 
+interface BugReport {
+  id: number;
+  title: string;
+  description: string;
+  steps: string | null;
+  severity: string;
+  category: string;
+  status: string;
+  adminResponse: string | null;
+  createdAt: string;
+  user: { fullName: string; email: string };
+  responder?: { fullName: string };
+}
+
 const AdminPanel = () => {
   const { user } = useAuth();
 
@@ -78,7 +92,16 @@ const AdminPanel = () => {
   const [newsFormError, setNewsFormError] = useState('');
   const [newsFormSuccess, setNewsFormSuccess] = useState('');
 
-  // --- Загрузка новостей (объявлена до useEffect) ---
+  // Состояния для Bug Bounty
+  const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  const [bugLoading, setBugLoading] = useState(false);
+  const [bugError, setBugError] = useState('');
+  const [respondingId, setRespondingId] = useState<number | null>(null);
+  const [responseText, setResponseText] = useState('');
+  const [status, setStatus] = useState('IN_PROGRESS');
+  const [bugMessage, setBugMessage] = useState('');
+
+  // --- Загрузка новостей ---
   const fetchNews = async () => {
     setNewsLoading(true);
     setNewsError('');
@@ -97,7 +120,26 @@ const AdminPanel = () => {
     }
   };
 
-  // --- useEffect (теперь fetchNews объявлена) ---
+  // --- Загрузка отчётов Bug Bounty ---
+  const fetchBugReports = async () => {
+    setBugLoading(true);
+    setBugError('');
+    try {
+      const res = await api.get('/bug-reports');
+      setBugReports(res.data);
+    } catch (err) {
+      let errorMsg = 'Ошибка загрузки отчётов';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        errorMsg = errObj.response?.data?.error || errorMsg;
+      }
+      setBugError(errorMsg);
+    } finally {
+      setBugLoading(false);
+    }
+  };
+
+  // --- useEffect ---
   useEffect(() => {
     const loadData = async () => {
       if (activeTab === 'groups' || activeTab === 'users' || activeTab === 'courses') {
@@ -128,11 +170,14 @@ const AdminPanel = () => {
       if (activeTab === 'news') {
         await fetchNews();
       }
+      if (activeTab === 'bugbounty') {
+        await fetchBugReports();
+      }
     };
     loadData();
   }, [activeTab]);
 
-  // --- Остальные функции (обработчики) ---
+  // --- Обработчики форм (управление, группы, пользователи, курсы) ---
 
   const resetNewsForm = () => {
     setNewsTitle('');
@@ -290,6 +335,62 @@ const AdminPanel = () => {
     }
   };
 
+  // --- Обработчики Bug Bounty ---
+  const handleRespond = async (id: number) => {
+    try {
+      await api.put(`/bug-reports/${id}/respond`, { adminResponse: responseText, status });
+      setBugMessage('✅ Ответ отправлен');
+      setRespondingId(null);
+      setResponseText('');
+      setStatus('IN_PROGRESS');
+      await fetchBugReports();
+    } catch (err) {
+      let msg = 'Ошибка отправки ответа';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        msg = errObj.response?.data?.error || msg;
+      }
+      setBugMessage(msg);
+    }
+  };
+
+  const handleDeleteBugReport = async (id: number) => {
+    if (!confirm('Удалить этот отчёт?')) return;
+    try {
+      await api.delete(`/bug-reports/${id}`);
+      setBugMessage('✅ Отчёт удалён');
+      await fetchBugReports();
+    } catch (err) {
+      let msg = 'Ошибка удаления отчёта';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        msg = errObj.response?.data?.error || msg;
+      }
+      setBugMessage(msg);
+    }
+  };
+
+  const getSeverityColor = (sev: string) => {
+    switch (sev) {
+      case 'LOW': return 'bg-green-100 text-green-800';
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800';
+      case 'HIGH': return 'bg-orange-100 text-orange-800';
+      case 'CRITICAL': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'NEW': return 'bg-blue-100 text-blue-800';
+      case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800';
+      case 'RESOLVED': return 'bg-green-100 text-green-800';
+      case 'WONTFIX': return 'bg-gray-100 text-gray-800';
+      case 'CLOSED': return 'bg-gray-300 text-gray-600';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (user?.role !== 'ADMIN') {
     return <div className="p-8 text-red-500">Доступ запрещён. Только для администратора.</div>;
   }
@@ -333,11 +434,18 @@ const AdminPanel = () => {
         >
           Новости
         </button>
+        <button
+          className={`py-2 px-4 font-medium whitespace-nowrap ${activeTab === 'bugbounty' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+          onClick={() => setActiveTab('bugbounty')}
+        >
+          Bug Bounty
+        </button>
       </div>
 
+      {/* Вкладка: Управление */}
       {activeTab === 'manage' && (
         <div className="space-y-6">
-          {/* Создание группы */}
+          {/* ... (все формы управления) ... */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Создать группу</h2>
             <form onSubmit={handleCreateGroup} className="space-y-4">
@@ -357,7 +465,6 @@ const AdminPanel = () => {
             </form>
           </div>
 
-          {/* Добавление студентов */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Добавить студентов в группу</h2>
             <form onSubmit={handleAddStudents} className="space-y-4">
@@ -375,7 +482,6 @@ const AdminPanel = () => {
             </form>
           </div>
 
-          {/* Создание преподавателя */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Создать преподавателя</h2>
             <form onSubmit={handleCreateTeacher} className="space-y-4">
@@ -399,7 +505,6 @@ const AdminPanel = () => {
             </form>
           </div>
 
-          {/* Сброс пароля */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Сброс пароля пользователя</h2>
             <form onSubmit={handleResetPassword} className="space-y-4">
@@ -417,6 +522,7 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {/* Вкладка: Группы */}
       {activeTab === 'groups' && (
         <div className="space-y-6">
           {loading ? <div className="text-center py-12">Загрузка...</div> : groups.length === 0 ? <p className="text-gray-500">Группы не найдены</p> : groups.map((group) => (
@@ -442,6 +548,7 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {/* Вкладка: Пользователи */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? <div className="text-center py-12">Загрузка...</div> : users.length === 0 ? <p className="p-6 text-gray-500">Пользователи не найдены</p> : (
@@ -457,6 +564,7 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {/* Вкладка: Курсы */}
       {activeTab === 'courses' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? <div className="text-center py-12">Загрузка...</div> : courses.length === 0 ? <p className="p-6 text-gray-500">Курсы не найдены</p> : (
@@ -472,6 +580,7 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {/* Вкладка: Новости */}
       {activeTab === 'news' && (
         <div>
           <div className="flex justify-between items-center mb-4">
@@ -571,6 +680,121 @@ const AdminPanel = () => {
                       Удалить
                     </button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Вкладка: Bug Bounty */}
+      {activeTab === 'bugbounty' && (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Управление отчётами Bug Bounty</h2>
+          </div>
+
+          {bugMessage && (
+            <div className={`p-3 mb-4 rounded ${bugMessage.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {bugMessage}
+            </div>
+          )}
+
+          {bugLoading ? (
+            <div className="text-center py-8">Загрузка...</div>
+          ) : bugError ? (
+            <div className="text-red-500 text-center py-8">{bugError}</div>
+          ) : bugReports.length === 0 ? (
+            <p className="text-gray-500">Нет отчётов</p>
+          ) : (
+            <div className="space-y-4">
+              {bugReports.map((report) => (
+                <div key={report.id} className="bg-white rounded-lg shadow p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <h3 className="font-semibold text-lg">{report.title}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(report.severity)}`}>
+                          {report.severity}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                          {report.status === 'NEW' && 'Новый'}
+                          {report.status === 'IN_PROGRESS' && 'В работе'}
+                          {report.status === 'RESOLVED' && 'Решён'}
+                          {report.status === 'WONTFIX' && 'Не будет исправлено'}
+                          {report.status === 'CLOSED' && 'Закрыт'}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 text-sm mt-1">{report.description}</p>
+                      {report.steps && <p className="text-gray-500 text-sm mt-1"><span className="font-medium">Шаги:</span> {report.steps}</p>}
+                      <p className="text-xs text-gray-400 mt-1">
+                        Автор: {report.user.fullName} ({report.user.email}) • {new Date(report.createdAt).toLocaleDateString()}
+                      </p>
+                      {report.adminResponse && (
+                        <div className="mt-2 bg-gray-50 p-2 rounded border-l-4 border-blue-400">
+                          <p className="text-sm font-medium text-gray-700">Ответ:</p>
+                          <p className="text-sm text-gray-600">{report.adminResponse}</p>
+                          {report.responder && (
+                            <p className="text-xs text-gray-400 mt-1">Ответил: {report.responder.fullName}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex space-x-2 ml-4">
+                      {!report.adminResponse && (
+                        <button
+                          onClick={() => setRespondingId(report.id)}
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          Ответить
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteBugReport(report.id)}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+
+                  {respondingId === report.id && (
+                    <div className="mt-4 border-t pt-4">
+                      <div className="space-y-3">
+                        <textarea
+                          placeholder="Ваш ответ..."
+                          value={responseText}
+                          onChange={(e) => setResponseText(e.target.value)}
+                          rows={3}
+                          className="w-full border rounded px-3 py-2"
+                        />
+                        <div className="flex items-center space-x-4">
+                          <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="border rounded px-3 py-2"
+                          >
+                            <option value="IN_PROGRESS">В работе</option>
+                            <option value="RESOLVED">Решён</option>
+                            <option value="WONTFIX">Не будет исправлено</option>
+                            <option value="CLOSED">Закрыт</option>
+                          </select>
+                          <button
+                            onClick={() => handleRespond(report.id)}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                          >
+                            Отправить ответ
+                          </button>
+                          <button
+                            onClick={() => setRespondingId(null)}
+                            className="text-gray-500 hover:underline"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

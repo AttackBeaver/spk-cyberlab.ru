@@ -31,16 +31,16 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
           {/* Основное меню (десктоп) */}
           <nav className="hidden md:flex items-center space-x-4 text-sm">
             <Link to="/" className="text-gray-700 hover:text-blue-600">Главная</Link>
+            <Link to="/directions" className="text-gray-700 hover:text-blue-600">Направления</Link>
             <Link to="/courses" className="text-gray-700 hover:text-blue-600">Курсы</Link>
-            <Link to="/practicums" className="text-gray-700 hover:text-blue-600">Практикумы</Link>
-            <Link to="/labs" className="text-gray-700 hover:text-blue-600">Лабораторные</Link>
             <Link to="/ctf-polygon" className="text-gray-700 hover:text-blue-600">CTF-полигон</Link>
             <Link to="/memes" className="text-gray-700 hover:text-blue-600">Мемы</Link>
+            <Link to="/bug-bounty" className="text-gray-700 hover:text-blue-600">Bug Bounty</Link>
 
             {user ? (
               <div className="relative group">
                 <span className="text-gray-700 hover:text-blue-600 cursor-pointer">Личный кабинет</span>
-                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity group-hover:pointer-events-auto">
                   <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">Профиль</Link>
                   <Link to="/achievements" className="block px-4 py-2 hover:bg-gray-100">Достижения</Link>
                   <Link to="/leaderboard" className="block px-4 py-2 hover:bg-gray-100">Рейтинг</Link>
@@ -84,11 +84,11 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
           <div className="md:hidden bg-white border-t">
             <nav className="flex flex-col p-4 space-y-2 text-sm">
               <Link to="/" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Главная</Link>
+              <Link to="/directions" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Направления</Link>
               <Link to="/courses" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Курсы</Link>
-              <Link to="/practicums" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Практикумы</Link>
-              <Link to="/labs" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Лабораторные</Link>
               <Link to="/ctf-polygon" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>CTF-полигон</Link>
               <Link to="/memes" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Мемы</Link>
+              <Link to="/bug-bounty" className="text-gray-700 hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>Bug Bounty</Link>
               {user ? (
                 <>
                   <div className="pt-2 border-t border-gray-200">
@@ -147,6 +147,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                 <li><Link to="/ctf-polygon" className="text-gray-500 hover:text-blue-600">CTF-полигон</Link></li>
                 <li><Link to="/knowledge" className="text-gray-500 hover:text-blue-600">База знаний</Link></li>
                 <li><Link to="/memes" className="text-gray-500 hover:text-blue-600">Мемы</Link></li>
+                <li><Link to="/bug-bounty" className="text-gray-500 hover:text-blue-600">Bug Bounty</Link></li>
               </ul>
             </div>
             <div>

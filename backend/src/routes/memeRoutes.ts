@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import {
-  getApprovedMemes,
+  getMemes,
   getPendingMemes,
   createMemeWithFile,
   approveMeme,
   rejectMeme,
   deleteMeme,
-  likeMeme,
-  dislikeMeme,
+  voteMeme,
+  getAuthorRanking,
   uploadMemeFile,
 } from '../controllers/memeController';
 import { authenticate } from '../middleware/auth';
@@ -15,8 +15,9 @@ import { allowRoles } from '../middleware/roleCheck';
 
 const router = Router();
 
-// Публичные
-router.get('/', getApprovedMemes);
+// Публичные маршруты
+router.get('/', getMemes); // поддерживает query параметры: category, search, sort, page, limit
+router.get('/authors/ranking', getAuthorRanking); // публичный рейтинг авторов
 
 // Модерация (ADMIN)
 router.get('/pending', authenticate, allowRoles('ADMIN'), getPendingMemes);
@@ -24,9 +25,8 @@ router.get('/pending', authenticate, allowRoles('ADMIN'), getPendingMemes);
 // Загрузка файла и создание мема (авторизованный)
 router.post('/upload', authenticate, uploadMemeFile, createMemeWithFile);
 
-// Лайки / дизлайки (авторизованный)
-router.post('/:id/like', authenticate, likeMeme);
-router.post('/:id/dislike', authenticate, dislikeMeme);
+// Голосование (авторизованный)
+router.post('/:id/vote', authenticate, voteMeme);
 
 // Управление (ADMIN)
 router.put('/:id/approve', authenticate, allowRoles('ADMIN'), approveMeme);
