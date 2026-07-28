@@ -24,26 +24,42 @@ import {
 
 const router = Router();
 
+console.log('🔵 Registering sandbox routes...');
+
 // Все маршруты требуют аутентификации
 router.use(authenticate);
 
-// CRUD заданий (для преподавателей и админов)
-router.get('/', getTasks);
-router.get('/:id', getTaskById);
-router.post('/', allowRoles('TEACHER', 'ADMIN'), createTask);
-router.put('/:id', allowRoles('TEACHER', 'ADMIN'), updateTask);
-router.delete('/:id', allowRoles('TEACHER', 'ADMIN'), deleteTask);
-router.post('/:id/assign', allowRoles('TEACHER', 'ADMIN'), assignTaskToGroups);
-router.get('/:id/groups', allowRoles('TEACHER', 'ADMIN'), getTaskGroups);
-
-// Маршруты выполнения (для студентов)
+// Специфические маршруты для tasks (должны быть выше общих)
+console.log('   POST /tasks/:taskId/start');
 router.post('/tasks/:taskId/start', startAttempt);
+console.log('   POST /tasks/:taskId/submit');
 router.post('/tasks/:taskId/submit', submitAttempt);
+console.log('   POST /tasks/:taskId/sql/init');
+router.post('/tasks/:taskId/sql/init', initSqlTask);
+console.log('   POST /tasks/:taskId/sql/execute');
+router.post('/tasks/:taskId/sql/execute', executeSqlQuery);
+console.log('   POST /tasks/:taskId/sql/close');
+router.post('/tasks/:taskId/sql/close', closeSqlTask);
+console.log('   GET /my-attempts');
 router.get('/my-attempts', getMyAttempts);
+console.log('   GET /attempts/:attemptId');
 router.get('/attempts/:attemptId', getAttemptDetails);
 
-router.post('/tasks/:taskId/sql/init', initSqlTask);
-router.post('/tasks/:taskId/sql/execute', executeSqlQuery);
-router.post('/tasks/:taskId/sql/close', closeSqlTask);
+// Общие CRUD маршруты
+console.log('   GET /');
+router.get('/', getTasks);
+console.log('   GET /:id');
+router.get('/:id', getTaskById);
+console.log('   POST /');
+router.post('/', allowRoles('TEACHER', 'ADMIN'), createTask);
+console.log('   PUT /:id');
+router.put('/:id', allowRoles('TEACHER', 'ADMIN'), updateTask);
+console.log('   DELETE /:id');
+router.delete('/:id', allowRoles('TEACHER', 'ADMIN'), deleteTask);
+console.log('   POST /:id/assign');
+router.post('/:id/assign', allowRoles('TEACHER', 'ADMIN'), assignTaskToGroups);
+console.log('   GET /:id/groups');
+router.get('/:id/groups', allowRoles('TEACHER', 'ADMIN'), getTaskGroups);
 
+console.log('✅ Sandbox routes registered.');
 export default router;

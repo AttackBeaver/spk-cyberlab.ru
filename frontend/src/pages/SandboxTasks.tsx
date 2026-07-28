@@ -18,6 +18,14 @@ interface SandboxTask {
   groups: { group: { id: number; name: string } }[];
 }
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+}
+
 const SandboxTasks = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +53,7 @@ const SandboxTasks = () => {
       XSS: 'XSS-атака',
       PHISHING: 'Фишинг',
       CODE: 'Программирование',
+      DATABASE: 'База данных',
       CUSTOM: 'Кастомное',
     };
     return map[type] || type;
@@ -63,12 +72,24 @@ const SandboxTasks = () => {
 
   const handleStart = async (taskId: number) => {
     try {
+      // Получаем тип задания
+      const taskRes = await api.get(`/sandbox/${taskId}`);
+      const taskType = taskRes.data.type;
+      
+      // Начинаем попытку
       const res = await api.post(`/sandbox/tasks/${taskId}/start`);
-      navigate(`/sandbox/task/${taskId}/attempt/${res.data.attemptId}`);
+      const attemptId = res.data.attemptId;
+
+      // Перенаправляем в зависимости от типа
+      if (taskType === 'DATABASE') {
+        navigate(`/sandbox/sql/task/${taskId}/attempt/${attemptId}`);
+      } else {
+        navigate(`/sandbox/task/${taskId}/attempt/${attemptId}`);
+      }
     } catch (err) {
       let msg = 'Ошибка начала задания';
       if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as { response?: { data?: { error?: string } } };
+        const errObj = err as ApiError;
         msg = errObj.response?.data?.error || msg;
       }
       alert(msg);

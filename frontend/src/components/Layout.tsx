@@ -39,12 +39,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
 
             {user ? (
               <div className="relative group">
-                <span className="text-gray-700 hover:text-blue-600 cursor-pointer">Личный кабинет</span>
-                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity group-hover:pointer-events-auto">
-                  <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">Профиль</Link>
-                  <Link to="/achievements" className="block px-4 py-2 hover:bg-gray-100">Достижения</Link>
-                  <Link to="/leaderboard" className="block px-4 py-2 hover:bg-gray-100">Рейтинг</Link>
-                </div>
+                <Link to="/profile" className="text-gray-700 hover:text-blue-600 cursor-pointer">Личный кабинет</Link>
               </div>
             ) : (
               <Link to="/login" className="text-blue-600 hover:underline">Вход</Link>

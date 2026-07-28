@@ -32,6 +32,7 @@ import TaskExecution from './pages/TaskExecution';
 import TeacherSandbox from './pages/TeacherSandbox';
 import SandboxPreview from './pages/SandboxPreview';
 import TeacherSandboxSQLCreator from './pages/TeacherSandboxSQLCreator';
+import TaskExecutionSQL from './pages/TaskExecutionSQL';
 
 function App() {
   const { user, loading } = useAuth();
@@ -75,6 +76,7 @@ function App() {
         <Route path="/sandbox/preview/:taskId" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <SandboxPreview /> : <Navigate to="/" />} />
         <Route path="/teacher/sandbox/sql/create" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}/>
         <Route path="/teacher/sandbox/sql/edit/:taskId" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}/>
+        <Route path="/sandbox/sql/task/:taskId/attempt/:attemptId" element={user ? <TaskExecutionSQL /> : <Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );

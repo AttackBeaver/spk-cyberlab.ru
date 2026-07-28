@@ -65,6 +65,9 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Фильтр по ролям
+  const [filterRole, setFilterRole] = useState('ALL');
+
   // Состояния для форм
   const [groupName, setGroupName] = useState('');
   const [groupPrefix, setGroupPrefix] = useState('');
@@ -75,10 +78,6 @@ const AdminPanel = () => {
   const [teacherEmail, setTeacherEmail] = useState('');
   const [teacherFullName, setTeacherFullName] = useState('');
   const [teacherPassword, setTeacherPassword] = useState('');
-
-  // Состояния для сброса пароля
-  const [resetUsername, setResetUsername] = useState('');
-  const [resetNewPassword, setResetNewPassword] = useState('');
 
   // Состояния для новостей
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -177,7 +176,7 @@ const AdminPanel = () => {
     loadData();
   }, [activeTab]);
 
-  // --- Обработчики форм (управление, группы, пользователи, курсы) ---
+  // --- Обработчики форм (управление) ---
 
   const resetNewsForm = () => {
     setNewsTitle('');
@@ -206,56 +205,50 @@ const AdminPanel = () => {
     }
   };
 
-const handleAddStudents = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const students = studentsInput.split('\n')
-      .filter(line => line.trim())
-      .map(line => {
-        // Пытаемся разделить по табуляции, если нет – по пробелам
-        let parts: string[];
-        if (line.includes('\t')) {
-          parts = line.trim().split('\t');
-        } else {
-          // Разделяем по пробелам, но учитываем, что ФИО может содержать пробелы
-          // Ищем последний пробел – за ним номер
-          const lastSpaceIdx = line.lastIndexOf(' ');
-          if (lastSpaceIdx === -1) {
-            // Если пробелов нет – ошибка
-            return null;
-          }
-          const name = line.substring(0, lastSpaceIdx).trim();
-          const number = line.substring(lastSpaceIdx + 1).trim();
-          if (!name || !number) return null;
-          return { fullName: name, studentNumber: parseInt(number) };
-        }
-        if (parts.length >= 2) {
-          const name = parts[0].trim();
-          const number = parts[1].trim();
-          if (name && number) {
+  const handleAddStudents = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const students = studentsInput.split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          let parts: string[];
+          if (line.includes('\t')) {
+            parts = line.trim().split('\t');
+          } else {
+            const lastSpaceIdx = line.lastIndexOf(' ');
+            if (lastSpaceIdx === -1) return null;
+            const name = line.substring(0, lastSpaceIdx).trim();
+            const number = line.substring(lastSpaceIdx + 1).trim();
+            if (!name || !number) return null;
             return { fullName: name, studentNumber: parseInt(number) };
           }
-        }
-        return null;
-      })
-      .filter(s => s !== null && s.fullName && s.studentNumber > 0);
+          if (parts.length >= 2) {
+            const name = parts[0].trim();
+            const number = parts[1].trim();
+            if (name && number) {
+              return { fullName: name, studentNumber: parseInt(number) };
+            }
+          }
+          return null;
+        })
+        .filter(s => s !== null && s.fullName && s.studentNumber > 0);
 
-    if (students.length === 0) {
-      setMessage('❌ Введите данные в формате: ФИО\tНомер или ФИО Номер (каждый студент с новой строки)');
-      return;
+      if (students.length === 0) {
+        setMessage('❌ Введите данные в формате: ФИО\tНомер или ФИО Номер (каждый студент с новой строки)');
+        return;
+      }
+      await api.post('/admin/students', { groupId: parseInt(selectedGroupId), students });
+      setMessage(`✅ Добавлено ${students.length} студентов`);
+      setStudentsInput('');
+    } catch (err) {
+      let errorMsg = 'Ошибка добавления студентов';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errObj = err as { response?: { data?: { error?: string } } };
+        errorMsg = errObj.response?.data?.error || errorMsg;
+      }
+      setMessage(errorMsg);
     }
-    await api.post('/admin/students', { groupId: parseInt(selectedGroupId), students });
-    setMessage(`✅ Добавлено ${students.length} студентов`);
-    setStudentsInput('');
-  } catch (err) {
-    let errorMsg = 'Ошибка добавления студентов';
-    if (err && typeof err === 'object' && 'response' in err) {
-      const errObj = err as { response?: { data?: { error?: string } } };
-      errorMsg = errObj.response?.data?.error || errorMsg;
-    }
-    setMessage(errorMsg);
-  }
-};
+  };
 
   const handleCreateTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -281,16 +274,15 @@ const handleAddStudents = async (e: React.FormEvent) => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // --- Сброс пароля пользователя (из таблицы) ---
+  const handleResetUserPassword = async (username: string) => {
+    if (!confirm(`Сбросить пароль пользователю ${username} на "123456"?`)) return;
     try {
       await api.post('/admin/reset-password', {
-        username: resetUsername,
-        newPassword: resetNewPassword,
+        username,
+        newPassword: '123456',
       });
-      setMessage('✅ Пароль успешно сброшен');
-      setResetUsername('');
-      setResetNewPassword('');
+      setMessage(`✅ Пароль пользователя ${username} сброшен на 123456`);
     } catch (err) {
       let errorMsg = 'Ошибка сброса пароля';
       if (err && typeof err === 'object' && 'response' in err) {
@@ -415,6 +407,11 @@ const handleAddStudents = async (e: React.FormEvent) => {
     }
   };
 
+  // Фильтрация пользователей по роли
+  const filteredUsers = filterRole === 'ALL'
+    ? users
+    : users.filter(u => u.role === filterRole);
+
   if (user?.role !== 'ADMIN') {
     return <div className="p-8 text-red-500">Доступ запрещён. Только для администратора.</div>;
   }
@@ -466,10 +463,9 @@ const handleAddStudents = async (e: React.FormEvent) => {
         </button>
       </div>
 
-      {/* Вкладка: Управление */}
+      {/* Вкладка: Управление (без блока сброса пароля) */}
       {activeTab === 'manage' && (
         <div className="space-y-6">
-          {/* ... (все формы управления) ... */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Создать группу</h2>
             <form onSubmit={handleCreateGroup} className="space-y-4">
@@ -528,21 +524,6 @@ const handleAddStudents = async (e: React.FormEvent) => {
               <button type="submit" className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Создать преподавателя</button>
             </form>
           </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Сброс пароля пользователя</h2>
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium">Логин или Email пользователя</label>
-                <input type="text" value={resetUsername} onChange={(e) => setResetUsername(e.target.value)} className="w-full border rounded px-3 py-2" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Новый пароль</label>
-                <input type="password" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className="w-full border rounded px-3 py-2" required minLength={6} />
-              </div>
-              <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">Сбросить пароль</button>
-            </form>
-          </div>
         </div>
       )}
 
@@ -572,19 +553,63 @@ const handleAddStudents = async (e: React.FormEvent) => {
         </div>
       )}
 
-      {/* Вкладка: Пользователи */}
+      {/* Вкладка: Пользователи (с фильтром по ролям и кнопкой сброса пароля) */}
       {activeTab === 'users' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {loading ? <div className="text-center py-12">Загрузка...</div> : users.length === 0 ? <p className="p-6 text-gray-500">Пользователи не найдены</p> : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th></tr></thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((u) => (
-                  <tr key={u.id}><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.id}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.username || '-'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.fullName}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.role}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.groupId || '-'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div>
+          <div className="mb-4 flex items-center space-x-4">
+            <label className="text-sm font-medium">Фильтр по роли:</label>
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="border rounded px-3 py-2"
+            >
+              <option value="ALL">Все</option>
+              <option value="STUDENT">Студент</option>
+              <option value="TEACHER">Преподаватель</option>
+              <option value="ADMIN">Администратор</option>
+            </select>
+          </div>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            {loading ? (
+              <div className="text-center py-12">Загрузка...</div>
+            ) : filteredUsers.length === 0 ? (
+              <p className="p-6 text-gray-500">Пользователи не найдены</p>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.username || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.fullName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.role}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.groupId || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button
+                          onClick={() => handleResetUserPassword(u.username || u.email || '')}
+                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs"
+                        >
+                          Сбросить пароль
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
 

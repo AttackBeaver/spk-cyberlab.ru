@@ -66,7 +66,7 @@ const TeacherSandboxSQLCreator = () => {
           }
         }
       } catch {
-        setError('Ошибка загрузки шаблонов');
+        setTemplates([]);
       }
     };
     fetchTemplates();
