@@ -42,7 +42,6 @@ export const registerStudent = async (req: Request, res: Response) => {
     },
   });
 
-  // Выдаём достижение за регистрацию
   await awardAchievement(updatedUser.id, 'Первый шаг');
 
   const token = jwt.sign(
@@ -62,17 +61,12 @@ export const registerStudent = async (req: Request, res: Response) => {
   });
 };
 
-// Логин (по username или email)
+// Логин (только по username)
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { username: username },
-        { email: username },
-      ],
-    },
+    where: { username: username },
   });
 
   if (!user) {
@@ -113,7 +107,6 @@ export const getProfile = async (req: Request, res: Response) => {
     select: {
       id: true,
       username: true,
-      email: true,
       fullName: true,
       role: true,
       groupId: true,

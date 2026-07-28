@@ -19,7 +19,6 @@ enum Role {
 model User {
   id             Int          @id @default(autoincrement())
   username       String?      @unique
-  email          String?      @unique
   passwordHash   String?      // null до активации
   fullName       String
   role           Role         @default(STUDENT)
@@ -42,7 +41,6 @@ model User {
   // === Добавлено для полигона ===
   sandboxTasksCreated SandboxTask[]      // задания, созданные преподавателем/админом
   sandboxAttempts     SandboxAttempt[]   // попытки выполнения заданий студентом
-  // --- НОВОЕ: проверенные отчёты ---
   sandboxReportsReviewed SandboxStudentReport[] @relation("Reviewer")
 }
 

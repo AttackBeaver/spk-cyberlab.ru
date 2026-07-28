@@ -4,7 +4,7 @@ import api from '../services/api';
 interface User {
   id: number;
   username?: string;
-  email?: string;
+  // email удалён
   fullName: string;
   role: 'STUDENT' | 'TEACHER' | 'ADMIN';
   groupId?: number;
@@ -12,7 +12,7 @@ interface User {
 }
 
 interface RegisterData {
-  email: string;
+  // email удалён (не используется)
   password: string;
   fullName: string;
   role?: 'STUDENT' | 'TEACHER' | 'ADMIN';

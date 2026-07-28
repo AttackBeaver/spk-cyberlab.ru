@@ -138,7 +138,7 @@ const Memes = () => {
       await api.post('/memes/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setMessage('✅ Мем отправлен на модерацию (или сразу добавлен, если вы админ)');
+      setMessage('✅ Мем отправлен на модерацию');
       setTitle('');
       setFile(null);
       setPreview(null);
@@ -227,7 +227,7 @@ const Memes = () => {
     <Layout>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-          <h1 className="text-2xl font-bold">IT-мемы</h1>
+          <h1 className="text-2xl font-bold">Мемная</h1>
           <div className="flex items-center space-x-2">
             {user && (
               <button

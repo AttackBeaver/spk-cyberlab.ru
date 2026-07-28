@@ -5,7 +5,7 @@ import prisma from '../utils/prisma';
 export const getAllReports = async (req: Request, res: Response) => {
   const reports = await prisma.bugReport.findMany({
     include: {
-      user: { select: { id: true, fullName: true, email: true } },
+      user: { select: { id: true, fullName: true } }, // email удалён
       responder: { select: { id: true, fullName: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -35,13 +35,12 @@ export const getReportById = async (req: Request, res: Response) => {
   const report = await prisma.bugReport.findUnique({
     where: { id: Number(id) },
     include: {
-      user: { select: { id: true, fullName: true, email: true } },
+      user: { select: { id: true, fullName: true } }, // email удалён
       responder: { select: { id: true, fullName: true } },
     },
   });
   if (!report) return res.status(404).json({ error: 'Отчёт не найден' });
 
-  // Проверка прав: админ видит всё, пользователь только свои
   if (userRole !== 'ADMIN' && report.userId !== userId) {
     return res.status(403).json({ error: 'Доступ запрещён' });
   }
@@ -81,7 +80,6 @@ export const respondToReport = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Требуется ответ и статус' });
   }
 
-  // Проверяем, что статус допустим
   const validStatuses = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'WONTFIX', 'CLOSED'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ error: 'Некорректный статус' });

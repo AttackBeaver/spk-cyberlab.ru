@@ -7,7 +7,7 @@ interface Course {
   id: number;
   title: string;
   description: string;
-  teacher: { fullName: string; email: string };
+  teacher: { fullName: string }; // email удалён
   createdAt: string;
 }
 

@@ -92,7 +92,7 @@ const Home = () => {
 
         <Link to="/memes" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition flex flex-col items-center text-center">
           <div className="text-4xl mb-2">😂</div>
-          <h3 className="text-lg font-semibold">Мемы</h3>
+          <h3 className="text-lg font-semibold">Мемная</h3>
           <p className="text-gray-500 text-sm">IT-юмор и мемы</p>
         </Link>
       </div>

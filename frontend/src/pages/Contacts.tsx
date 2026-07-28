@@ -11,33 +11,33 @@ const Contacts = () => {
             <h2 className="text-xl font-semibold mb-4">Адрес</h2>
             <p className="text-gray-700">
               БПОУ ОО «Сибирский профессиональный колледж»<br />
-              644116, Омская область, г. Омск,<br />
-              ул. 2-я Солнечная, 35а
+              644005, Омская область, г. Омск, ул. Добролюбова, 15
             </p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Контакты</h2>
             <p className="text-gray-700">
-              <span className="font-medium">Телефон:</span> +7 (3812) 20-41-41<br />
-              <span className="font-medium">E-mail:</span> spk55@mail.ru<br />
-              <span className="font-medium">Сайт:</span> <a href="https://spk-55.ru/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">spk-55.ru</a>
+              <span className="font-medium">Сайт:</span> <a href="https://spk-55.ru/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">spk-55.ru</a><br />
+              <span className="font-medium">Разработчик:</span> <a href="https://t.me/attack_beaver" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">@attack_beaver</a><br />           
+              <span className="font-medium">GitHub:</span> <a href="https://github.com/AttackBeaver/spk-cyberlab.ru" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">AttackBeaver/spk-cyberlab.ru</a>
             </p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Разработчик платформы</h2>
             <p className="text-gray-700">
-              <span className="font-medium">Стариков Александр Владимирович</span><br />
-              Преподаватель, разработчик платформы<br />
+              <span className="font-medium">Стариков Александр Владимирович,</span><br />
+              Преподаватель<br />
             </p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Режим работы колледжа</h2>
             <p className="text-gray-700">
-            Пн–Пт: 8:00 – 17:00 (обед: 12:00 – 13:00)<br />
-            Сб–Вс: выходной
+            Понедельник - Пятница с 8:00 до 19:00<br />
+            Суббота с 8:00 до 15:30<br />
+            Воскресенье - выходной
           </p>
           </div>
         </div>

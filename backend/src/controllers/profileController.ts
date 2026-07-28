@@ -110,7 +110,6 @@ export const changePassword = async (req: Request, res: Response) => {
   res.json({ message: 'Пароль успешно изменён' });
 };
 
-// Новая функция: история выполненных заданий
 export const getTaskHistory = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
 

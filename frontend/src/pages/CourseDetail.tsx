@@ -15,7 +15,7 @@ interface CourseDetail {
   id: number;
   title: string;
   description: string;
-  teacher: { fullName: string; email: string };
+  teacher: { fullName: string }; // email удалён
   modules: Module[];
   createdAt: string;
 }

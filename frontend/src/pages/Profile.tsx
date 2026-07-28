@@ -80,7 +80,7 @@ const Profile = () => {
     }
 
     try {
-      await api.post('/auth/change-password', {
+      await api.post('/profile/change-password', {
         oldPassword,
         newPassword,
       });
