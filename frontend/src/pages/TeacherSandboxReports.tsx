@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Layout from '../components/Layout';
@@ -90,28 +90,50 @@ const TeacherSandboxReports = () => {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Загрузка данных
+  const isMounted = useRef(true);
+
   useEffect(() => {
-    const loadData = async () => {
-      if (!taskId) return;
-      setLoading(true);
-      setError('');
-      try {
-        const [reportsRes, statsRes] = await Promise.all([
-          api.get(`/sandbox/tasks/${taskId}/reports`),
-          api.get(`/sandbox/tasks/${taskId}/statistics`),
-        ]);
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const loadData = async () => {
+    console.log('📡 loadData вызван, taskId:', taskId);
+    if (!taskId) {
+      console.error('❌ taskId отсутствует');
+      setLoading(false);
+      setError('Не указан идентификатор задания');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const [reportsRes, statsRes] = await Promise.all([
+        api.get(`/sandbox/tasks/${taskId}/reports`),
+        api.get(`/sandbox/tasks/${taskId}/statistics`),
+      ]);
+      console.log('✅ Данные получены');
+      if (isMounted.current) {
         setReports(reportsRes.data);
         setStatistics(statsRes.data);
-      } catch (err) {
+      }
+    } catch (err) {
+      console.error('❌ Ошибка загрузки:', err);
+      if (isMounted.current) {
         const errorObj = err as ApiError;
         setError(errorObj.response?.data?.error || 'Ошибка загрузки данных');
-      } finally {
-        setLoading(false);
       }
-    };
+    } finally {
+      console.log('🏁 Загрузка завершена, устанавливаем loading=false');
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   const handleGrade = async (reportId: number) => {
@@ -132,13 +154,7 @@ const TeacherSandboxReports = () => {
       setSelectedReportId(null);
       setGradeScore(0);
       setGradeFeedback('');
-      // Перезагружаем данные после обновления
-      const [reportsRes, statsRes] = await Promise.all([
-        api.get(`/sandbox/tasks/${taskId}/reports`),
-        api.get(`/sandbox/tasks/${taskId}/statistics`),
-      ]);
-      setReports(reportsRes.data);
-      setStatistics(statsRes.data);
+      await loadData();
     } catch (err) {
       const errorObj = err as ApiError;
       setError(errorObj.response?.data?.error || 'Ошибка выставления оценки');
@@ -151,6 +167,27 @@ const TeacherSandboxReports = () => {
     setSelectedReportId(report.id);
     setGradeScore(report.score || 0);
     setGradeFeedback(report.attempt.feedback || '');
+  };
+
+  const handleExportCSV = async () => {
+    if (!taskId) return;
+    try {
+      const response = await api.get(`/sandbox/tasks/${taskId}/export-csv`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `results_task_${taskId}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const errorObj = err as ApiError;
+      alert(errorObj.response?.data?.error || 'Ошибка экспорта CSV');
+    }
   };
 
   if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
@@ -166,13 +203,7 @@ const TeacherSandboxReports = () => {
       <Layout>
         <div className="text-red-500 text-center py-8">{error}</div>
         <div className="text-center">
-          <button
-            onClick={() => {
-              // Перезагрузка данных через useEffect
-              window.location.reload();
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
+          <button onClick={loadData} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             Повторить
           </button>
         </div>
@@ -187,19 +218,26 @@ const TeacherSandboxReports = () => {
           <h1 className="text-2xl font-bold">
             Отчёты по заданию: {statistics?.task.title || 'Загрузка...'}
           </h1>
-          <button
-            onClick={() => navigate('/teacher/sandbox')}
-            className="text-blue-600 hover:underline"
-          >
-            ← Назад к управлению заданиями
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleExportCSV}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              📥 Экспорт CSV
+            </button>
+            <button
+              onClick={() => navigate('/teacher/sandbox')}
+              className="text-blue-600 hover:underline"
+            >
+              ← Назад к управлению заданиями
+            </button>
+          </div>
         </div>
 
         {successMessage && (
           <div className="bg-green-100 text-green-700 p-3 rounded mb-4">{successMessage}</div>
         )}
 
-        {/* Статистика */}
         {statistics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow p-4 text-center">
@@ -221,7 +259,6 @@ const TeacherSandboxReports = () => {
           </div>
         )}
 
-        {/* Список студентов с отчётами */}
         {reports.length === 0 ? (
           <p className="text-gray-500 text-center py-8">Нет отчётов для этого задания</p>
         ) : (
@@ -286,7 +323,6 @@ const TeacherSandboxReports = () => {
           </div>
         )}
 
-        {/* Модалка для оценки отчёта */}
         {selectedReportId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-full overflow-auto p-6">

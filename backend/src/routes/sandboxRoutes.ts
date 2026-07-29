@@ -13,7 +13,7 @@ import {
   submitAttempt,
   getMyAttempts,
   getAttemptDetails,
-  executeCodeHandler, // <-- добавлен импорт
+  executeCodeHandler,
 } from '../controllers/sandboxExecutionController';
 import {
   initSqlTask,
@@ -27,6 +27,7 @@ import {
   gradeReport,
   getMyReports,
   getTaskStatistics,
+  exportTaskResultsCSV, // <-- добавлен импорт
 } from '../controllers/sandboxReportController';
 import { authenticate } from '../middleware/auth';
 import { allowRoles } from '../middleware/roleCheck';
@@ -49,7 +50,7 @@ console.log('   POST /tasks/:taskId/sql/execute');
 router.post('/tasks/:taskId/sql/execute', executeSqlQuery);
 console.log('   POST /tasks/:taskId/sql/close');
 router.post('/tasks/:taskId/sql/close', closeSqlTask);
-console.log('   POST /tasks/:taskId/execute'); // <-- новый маршрут для выполнения кода
+console.log('   POST /tasks/:taskId/execute');
 router.post('/tasks/:taskId/execute', executeCodeHandler);
 console.log('   GET /my-attempts');
 router.get('/my-attempts', getMyAttempts);
@@ -69,6 +70,8 @@ console.log('   PUT /reports/:reportId/grade');
 router.put('/reports/:reportId/grade', allowRoles('TEACHER', 'ADMIN'), gradeReport);
 console.log('   GET /tasks/:taskId/statistics');
 router.get('/tasks/:taskId/statistics', allowRoles('TEACHER', 'ADMIN'), getTaskStatistics);
+console.log('   GET /tasks/:taskId/export-csv'); // <-- новый маршрут для CSV
+router.get('/tasks/:taskId/export-csv', allowRoles('TEACHER', 'ADMIN'), exportTaskResultsCSV);
 
 // ===== Общие CRUD маршруты =====
 console.log('   GET /');

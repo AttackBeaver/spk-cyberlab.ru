@@ -353,3 +353,59 @@ export const getTaskStatistics = async (req: Request, res: Response) => {
     })),
   });
 };
+
+// ===== 7. Экспорт результатов в CSV =====
+export const exportTaskResultsCSV = async (req: Request, res: Response) => {
+  const { taskId } = req.params;
+  const user = (req as any).user;
+
+  if (!isTeacherOrAdmin(user.role)) {
+    return res.status(403).json({ error: 'Недостаточно прав' });
+  }
+
+  const task = await prisma.sandboxTask.findUnique({
+    where: { id: Number(taskId) },
+    select: { createdBy: true, title: true },
+  });
+  if (!task) {
+    return res.status(404).json({ error: 'Задание не найдено' });
+  }
+  if (user.role !== 'ADMIN' && task.createdBy !== user.id) {
+    return res.status(403).json({ error: 'Вы не можете экспортировать результаты для этого задания' });
+  }
+
+  // Получаем все попытки с пользователями и отчётами
+  const attempts = await prisma.sandboxAttempt.findMany({
+    where: { taskId: Number(taskId) },
+    include: {
+      user: {
+        select: { fullName: true, username: true, group: { select: { name: true } } },
+      },
+      report: true,
+    },
+    orderBy: { completedAt: 'asc' },
+  });
+
+  // Формируем CSV
+  const header = 'Студент,Логин,Группа,Статус,Балл,Отчёт,Оценка за отчёт\n';
+  const rows = attempts.map(a => {
+    const statusMap: Record<string, string> = {
+      PENDING: 'Ожидает',
+      PASSED: 'Выполнено',
+      FAILED: 'Неверно',
+      TIME_EXPIRED: 'Время истекло',
+    };
+    const status = statusMap[a.status] || a.status;
+    const score = a.score !== null ? a.score : '';
+    const reportText = a.report ? 'Да' : 'Нет';
+    const reportScore = a.report?.score !== null && a.report?.score !== undefined ? a.report.score : '';
+    const groupName = a.user.group?.name || '';
+    return `${a.user.fullName},${a.user.username},${groupName},${status},${score},${reportText},${reportScore}`;
+  }).join('\n');
+
+  const csv = header + rows;
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=results_task_${taskId}.csv`);
+  res.send(csv);
+};
