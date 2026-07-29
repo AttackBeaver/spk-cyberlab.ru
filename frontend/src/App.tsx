@@ -33,6 +33,8 @@ import TeacherSandbox from './pages/TeacherSandbox';
 import SandboxPreview from './pages/SandboxPreview';
 import TeacherSandboxSQLCreator from './pages/TeacherSandboxSQLCreator';
 import TaskExecutionSQL from './pages/TaskExecutionSQL';
+import TeacherSandboxTemplateCreator from './pages/TeacherSandboxTemplateCreator';
+import TeacherSandboxReports from './pages/TeacherSandboxReports';
 
 function App() {
   const { user, loading } = useAuth();
@@ -48,11 +50,20 @@ function App() {
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
         <Route path="/" element={<Home />} />
         <Route path="/courses" element={user ? <Courses /> : <Navigate to="/login" />} />
-        <Route path="/teacher/courses" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourses /> : <Navigate to="/" />} />
-        <Route path="/admin" element={user?.role === 'ADMIN' ? <Layout><AdminPanel /></Layout> : <Navigate to="/" />} />
+        <Route
+          path="/teacher/courses"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourses /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/admin"
+          element={user?.role === 'ADMIN' ? <Layout><AdminPanel /></Layout> : <Navigate to="/" />}
+        />
         <Route path="/course/:id" element={user ? <CourseDetails /> : <Navigate to="/login" />} />
         <Route path="/task/:taskId" element={user ? <TaskPage /> : <Navigate to="/login" />} />
-        <Route path="/teacher/course/:courseId/edit" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourseEdit /> : <Navigate to="/" />} />
+        <Route
+          path="/teacher/course/:courseId/edit"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourseEdit /> : <Navigate to="/" />}
+        />
         <Route path="/memes" element={<Memes />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
         <Route path="/about" element={<About />} />
@@ -71,12 +82,43 @@ function App() {
         <Route path="/500" element={<ServerError />} />
         <Route path="/bug-bounty" element={user ? <BugBounty /> : <Navigate to="/login" />} />
         <Route path="/sandbox" element={user ? <SandboxTasks /> : <Navigate to="/login" />} />
-        <Route path="/sandbox/task/:taskId/attempt/:attemptId" element={user ? <TaskExecution /> : <Navigate to="/login" />} />
-        <Route path="/teacher/sandbox" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandbox /> : <Navigate to="/" />} />
-        <Route path="/sandbox/preview/:taskId" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <SandboxPreview /> : <Navigate to="/" />} />
-        <Route path="/teacher/sandbox/sql/create" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}/>
-        <Route path="/teacher/sandbox/sql/edit/:taskId" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}/>
-        <Route path="/sandbox/sql/task/:taskId/attempt/:attemptId" element={user ? <TaskExecutionSQL /> : <Navigate to="/login" />} />
+        <Route
+          path="/sandbox/task/:taskId/attempt/:attemptId"
+          element={user ? <TaskExecution /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/teacher/sandbox"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandbox /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/sandbox/preview/:taskId"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <SandboxPreview /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/teacher/sandbox/sql/create"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/teacher/sandbox/sql/edit/:taskId"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxSQLCreator /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/sandbox/sql/task/:taskId/attempt/:attemptId"
+          element={user ? <TaskExecutionSQL /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/teacher/sandbox/templates/create"
+          element={user?.role === 'ADMIN' ? <TeacherSandboxTemplateCreator /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/teacher/sandbox/templates/edit/:templateId"
+          element={user?.role === 'ADMIN' ? <TeacherSandboxTemplateCreator /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/teacher/sandbox/reports/:taskId"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxReports /> : <Navigate to="/" />}
+        />
       </Routes>
     </BrowserRouter>
   );

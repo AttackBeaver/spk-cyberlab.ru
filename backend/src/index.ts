@@ -45,8 +45,10 @@ app.use('/api/memes', memeRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/bug-reports', bugReportRoutes);
-app.use('/api/sandbox', sandboxRoutes);
+
+// ===== ВАЖНО: подключаем шаблоны ПЕРЕД основными маршрутами песочницы =====
 app.use('/api/sandbox/templates', sandboxTemplateRoutes);
+app.use('/api/sandbox', sandboxRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });

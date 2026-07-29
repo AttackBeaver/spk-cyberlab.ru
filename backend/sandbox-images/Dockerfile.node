@@ -1,0 +1,18 @@
+# Базовый образ Node.js 20 slim
+FROM node:20-slim
+
+# Создаём непривилегированного пользователя
+RUN addgroup --system --gid 1001 student && \
+    adduser --system --uid 1001 --gid 1001 student
+
+# Устанавливаем рабочий каталог
+WORKDIR /app
+
+# Ограничиваем права на запись (только чтение для пользователя)
+RUN chown -R student:student /app && chmod -R 755 /app
+
+# Переключаемся на непривилегированного пользователя
+USER student
+
+# Команда по умолчанию (будет переопределена при запуске)
+CMD ["node"]

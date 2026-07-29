@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
+import { executeCode } from '../services/codeExecutor';
 
 // Тип для задачи при проверке
 interface TaskForCheck {
@@ -7,6 +8,7 @@ interface TaskForCheck {
   answerTemplate: string | null;
   expectedResult: string | null;
   points: number;
+  config: any | null; // для CODE – содержит язык
 }
 
 // ===== Проверка доступа студента к заданию =====
@@ -69,8 +71,8 @@ const checkLimits = async (taskId: number, userId: number) => {
   return { activeAttempt: null };
 };
 
-// ===== Логика проверки ответа =====
-const checkAnswer = (task: TaskForCheck, answer: string): { score: number; feedback: string } => {
+// ===== Логика проверки ответа (асинхронная) =====
+const checkAnswer = async (task: TaskForCheck, answer: string): Promise<{ score: number; feedback: string }> => {
   // 1. Проверка ожидаемого результата (для интерактивных заданий)
   if (task.expectedResult) {
     const containsExpected = answer.toLowerCase().includes(task.expectedResult.toLowerCase());
@@ -122,7 +124,30 @@ const checkAnswer = (task: TaskForCheck, answer: string): { score: number; feedb
     };
   }
 
-  // 5. CODE, PHISHING и др. – заглушка
+  // 5. CODE – выполнение кода
+  if (task.type === 'CODE') {
+    // Определяем язык из конфига или по умолчанию Python
+    const language = task.config?.language || 'python';
+    const result = await executeCode(answer, language);
+
+    if (result.success) {
+      // Сравниваем вывод с ожидаемым результатом
+      const expected = task.expectedResult || '';
+      const isMatch = result.output.toLowerCase().includes(expected.toLowerCase());
+      if (isMatch) {
+        return { score: 100, feedback: '✅ Код выполнен успешно, вывод соответствует ожидаемому.' };
+      } else {
+        return {
+          score: 0,
+          feedback: `❌ Вывод программы не соответствует ожидаемому.\nОжидалось: ${expected}\nПолучено: ${result.output}`,
+        };
+      }
+    } else {
+      return { score: 0, feedback: `❌ Ошибка выполнения кода: ${result.error || result.output}` };
+    }
+  }
+
+  // 6. PHISHING и другие – заглушка
   return {
     score: 0,
     feedback: '⏳ Этот тип задания пока не поддерживается автоматической проверкой.',
@@ -197,13 +222,29 @@ export const submitAttempt = async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Нет активной попытки. Начните новую попытку.' });
   }
 
+  // Добавляем config в select для поддержки CODE
   const task = await prisma.sandboxTask.findUnique({
     where: { id: Number(taskId) },
-    select: { type: true, answerTemplate: true, points: true, expectedResult: true },
+    select: {
+      type: true,
+      answerTemplate: true,
+      points: true,
+      expectedResult: true,
+      config: true, // <-- добавлено
+    },
   });
   if (!task) return res.status(404).json({ error: 'Задание не найдено' });
 
-  const { score, feedback } = checkAnswer(task, answer);
+  // Приводим task к TaskForCheck (config может быть null или объектом)
+  const taskForCheck: TaskForCheck = {
+    type: task.type,
+    answerTemplate: task.answerTemplate,
+    expectedResult: task.expectedResult,
+    points: task.points,
+    config: task.config,
+  };
+
+  const { score, feedback } = await checkAnswer(taskForCheck, answer);
 
   const updatedAttempt = await prisma.sandboxAttempt.update({
     where: { id: attempt.id },
@@ -260,7 +301,22 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
   res.json(attempt);
 };
 
-// Вспомогательная функция (заглушка)
-const calculateRemainingTime = (startedAt: Date, taskId: number): number | null => {
-  return null;
+// ===== Выполнение кода без сохранения попытки (для предварительного запуска) =====
+export const executeCodeHandler = async (req: Request, res: Response) => {
+  const { taskId } = req.params;
+  const { code, language } = req.body;
+  const userId = (req as any).user.id;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Код не указан' });
+  }
+
+  // Проверка доступа
+  const hasAccess = await checkTaskAccess(Number(taskId), userId);
+  if (!hasAccess) {
+    return res.status(403).json({ error: 'Доступ запрещён' });
+  }
+
+  const result = await executeCode(code, language || 'python');
+  res.json(result);
 };

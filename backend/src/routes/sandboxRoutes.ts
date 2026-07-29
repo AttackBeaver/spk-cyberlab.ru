@@ -13,14 +13,23 @@ import {
   submitAttempt,
   getMyAttempts,
   getAttemptDetails,
+  executeCodeHandler, // <-- добавлен импорт
 } from '../controllers/sandboxExecutionController';
-import { authenticate } from '../middleware/auth';
-import { allowRoles } from '../middleware/roleCheck';
 import {
   initSqlTask,
   executeSqlQuery,
   closeSqlTask,
 } from '../controllers/sandboxSqlController';
+import {
+  submitReport,
+  getReportsByTask,
+  getReportById,
+  gradeReport,
+  getMyReports,
+  getTaskStatistics,
+} from '../controllers/sandboxReportController';
+import { authenticate } from '../middleware/auth';
+import { allowRoles } from '../middleware/roleCheck';
 
 const router = Router();
 
@@ -29,7 +38,7 @@ console.log('🔵 Registering sandbox routes...');
 // Все маршруты требуют аутентификации
 router.use(authenticate);
 
-// Специфические маршруты для tasks (должны быть выше общих)
+// ===== Специфические маршруты для tasks (должны быть выше общих) =====
 console.log('   POST /tasks/:taskId/start');
 router.post('/tasks/:taskId/start', startAttempt);
 console.log('   POST /tasks/:taskId/submit');
@@ -40,12 +49,28 @@ console.log('   POST /tasks/:taskId/sql/execute');
 router.post('/tasks/:taskId/sql/execute', executeSqlQuery);
 console.log('   POST /tasks/:taskId/sql/close');
 router.post('/tasks/:taskId/sql/close', closeSqlTask);
+console.log('   POST /tasks/:taskId/execute'); // <-- новый маршрут для выполнения кода
+router.post('/tasks/:taskId/execute', executeCodeHandler);
 console.log('   GET /my-attempts');
 router.get('/my-attempts', getMyAttempts);
 console.log('   GET /attempts/:attemptId');
 router.get('/attempts/:attemptId', getAttemptDetails);
 
-// Общие CRUD маршруты
+// ===== Отчёты и ручная проверка =====
+console.log('   POST /attempts/:attemptId/report');
+router.post('/attempts/:attemptId/report', submitReport);
+console.log('   GET /reports/my');
+router.get('/reports/my', getMyReports);
+console.log('   GET /tasks/:taskId/reports');
+router.get('/tasks/:taskId/reports', allowRoles('TEACHER', 'ADMIN'), getReportsByTask);
+console.log('   GET /reports/:reportId');
+router.get('/reports/:reportId', allowRoles('TEACHER', 'ADMIN'), getReportById);
+console.log('   PUT /reports/:reportId/grade');
+router.put('/reports/:reportId/grade', allowRoles('TEACHER', 'ADMIN'), gradeReport);
+console.log('   GET /tasks/:taskId/statistics');
+router.get('/tasks/:taskId/statistics', allowRoles('TEACHER', 'ADMIN'), getTaskStatistics);
+
+// ===== Общие CRUD маршруты =====
 console.log('   GET /');
 router.get('/', getTasks);
 console.log('   GET /:id');

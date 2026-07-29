@@ -10,6 +10,7 @@ interface Task {
   instructions: string | null;
   htmlTemplate: string | null;
   expectedResult: string | null;
+  hint: string | null;
   type: string;
   difficulty: number;
   timeLimit: number | null;
@@ -32,15 +33,9 @@ interface Attempt {
   completedAt: string | null;
 }
 
-interface ApiError {
-  response?: {
-    data?: {
-      error?: string;
-    };
-  };
+interface QueryResultRow {
+  [key: string]: string | number | boolean | null;
 }
-
-type QueryResultRow = Record<string, string | number | boolean | null>;
 
 const TaskExecutionSQL = () => {
   const { taskId, attemptId } = useParams<{ taskId: string; attemptId: string }>();
@@ -53,7 +48,11 @@ const TaskExecutionSQL = () => {
   const [query, setQuery] = useState('');
   const [queryResult, setQueryResult] = useState<QueryResultRow[] | null>(null);
   const [executing, setExecuting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number; feedback: string; status: string } | null>(null);
+  const [showSchema, setShowSchema] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,13 +63,12 @@ const TaskExecutionSQL = () => {
       }
 
       try {
-        const taskRes = await api.get(`/sandbox/${taskId}`);
+        const [taskRes, attemptRes] = await Promise.all([
+          api.get(`/sandbox/${taskId}`),
+          api.get(`/sandbox/attempts/${attemptId}`)
+        ]);
+
         setTask(taskRes.data);
-
-        const attemptRes = await api.get(`/sandbox/attempts/${attemptId}`);
-        setAttempt(attemptRes.data);
-
-        await api.post(`/sandbox/tasks/${taskId}/sql/init`);
 
         if (attemptRes.data.status !== 'PENDING') {
           setResult({
@@ -78,6 +76,18 @@ const TaskExecutionSQL = () => {
             feedback: attemptRes.data.feedback || 'Завершено',
             status: attemptRes.data.status,
           });
+        }
+
+        setAttempt(attemptRes.data);
+
+        // Инициализация БД для задания
+        await api.post(`/sandbox/tasks/${taskId}/sql/init`);
+
+        // Расчёт оставшегося времени
+        if (taskRes.data.timeLimit && attemptRes.data.startedAt) {
+          const elapsed = (Date.now() - new Date(attemptRes.data.startedAt).getTime()) / 60000;
+          const remaining = Math.max(0, taskRes.data.timeLimit - elapsed);
+          setTimeLeft(Math.ceil(remaining));
         }
       } catch (err) {
         setError('Ошибка загрузки данных');
@@ -89,6 +99,21 @@ const TaskExecutionSQL = () => {
 
     fetchData();
   }, [taskId, attemptId]);
+
+  // Таймер
+  useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
 
   const handleExecuteQuery = async () => {
     if (!taskId || !query.trim()) return;
@@ -112,6 +137,7 @@ const TaskExecutionSQL = () => {
 
   const handleSubmit = async () => {
     if (!taskId) return;
+    setSubmitting(true);
     try {
       const res = await api.post(`/sandbox/tasks/${taskId}/submit`, { answer: query });
       setResult({
@@ -122,13 +148,19 @@ const TaskExecutionSQL = () => {
       const updatedAttempt = await api.get(`/sandbox/attempts/${attemptId}`);
       setAttempt(updatedAttempt.data);
     } catch (err) {
-      let msg = 'Ошибка отправки ответа';
-      if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as ApiError;
-        msg = errObj.response?.data?.error || msg;
-      }
-      setError(msg);
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Ошибка отправки ответа');
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const formatTime = (minutes: number) => {
+    if (minutes < 1) return 'менее 1 минуты';
+    if (minutes < 60) return `${minutes} мин`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours} ч ${mins} мин`;
   };
 
   if (loading) return <Layout><div className="text-center py-8">Загрузка...</div></Layout>;
@@ -140,7 +172,7 @@ const TaskExecutionSQL = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
           <h1 className="text-2xl font-bold">{task.title}</h1>
           <button
             onClick={() => navigate('/sandbox')}
@@ -150,128 +182,219 @@ const TaskExecutionSQL = () => {
           </button>
         </div>
 
+        {/* Информационная панель */}
+        <div className="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
+          <div>
+            <span className="text-gray-500">Тип:</span>
+            <span className="ml-1 font-medium">{task.type}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Сложность:</span>
+            <span className="ml-1 font-medium">{task.difficulty}/5</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Баллы:</span>
+            <span className="ml-1 font-medium">{task.points}</span>
+          </div>
+          {task.timeLimit && (
+            <div>
+              <span className="text-gray-500">⏱️ Время:</span>
+              <span className="ml-1 font-medium">{task.timeLimit} мин</span>
+            </div>
+          )}
+          {task.attemptsLimit && (
+            <div>
+              <span className="text-gray-500">📝 Попыток:</span>
+              <span className="ml-1 font-medium">{task.attemptsLimit}</span>
+            </div>
+          )}
+          {attempt && (
+            <div>
+              <span className="text-gray-500">Статус:</span>
+              <span
+                className={`ml-1 font-medium ${
+                  attempt.status === 'PENDING'
+                    ? 'text-yellow-600'
+                    : attempt.status === 'PASSED'
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                }`}
+              >
+                {attempt.status === 'PENDING' && 'В процессе'}
+                {attempt.status === 'PASSED' && '✅ Выполнено'}
+                {attempt.status === 'FAILED' && '❌ Неверно'}
+                {attempt.status === 'TIME_EXPIRED' && '⏰ Время истекло'}
+              </span>
+            </div>
+          )}
+          {timeLeft !== null && timeLeft > 0 && attempt?.status === 'PENDING' && (
+            <div className="col-span-2 sm:col-span-1">
+              <span className="text-gray-500">⏳ Осталось:</span>
+              <span className={`ml-1 font-medium ${timeLeft < 5 ? 'text-red-600' : 'text-blue-600'}`}>
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Левая колонка — описание, инструкции, схема, подсказка */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-lg shadow p-4">
               <h2 className="text-lg font-semibold">Описание</h2>
-              <p className="text-gray-700">{task.description}</p>
+              <p className="text-gray-700 whitespace-pre-wrap mt-2">{task.description}</p>
               {task.instructions && (
-                <div className="mt-2">
-                  <h3 className="font-medium">Инструкции:</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{task.instructions}</p>
-                </div>
-              )}
-              {task.config?.hint && (
-                <div className="mt-2 text-sm text-blue-600">
-                  <span className="font-medium">Подсказка:</span> {task.config.hint}
+                <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                  <h3 className="font-medium text-blue-800">📌 Инструкции:</h3>
+                  <p className="text-blue-700 whitespace-pre-wrap mt-1">{task.instructions}</p>
                 </div>
               )}
             </div>
 
-            {task.htmlTemplate && (
+            {/* Схема БД */}
+            {task.config?.schema && (
               <div className="bg-white rounded-lg shadow p-4">
-                <h2 className="text-lg font-semibold">Макет</h2>
-                <div className="border rounded p-2 bg-gray-50 overflow-auto max-h-96">
-                  <div dangerouslySetInnerHTML={{ __html: task.htmlTemplate }} />
-                </div>
+                <button
+                  onClick={() => setShowSchema(!showSchema)}
+                  className="text-blue-600 hover:underline font-medium flex items-center gap-2"
+                >
+                  🗄️ {showSchema ? 'Скрыть схему БД' : 'Показать схему БД'}
+                  <svg
+                    className={`w-4 h-4 transition-transform ${showSchema ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showSchema && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded border overflow-auto max-h-64">
+                    <pre className="text-sm font-mono whitespace-pre-wrap">{task.config.schema}</pre>
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow p-4">
-              <h2 className="text-lg font-semibold mb-2">SQL-терминал</h2>
-              <div className="border rounded p-2 bg-gray-50">
-                <textarea
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  rows={6}
-                  className="w-full border rounded px-3 py-2 font-mono text-sm"
-                  placeholder="Введите SQL-запрос (SELECT ...)"
-                  disabled={!!isCompleted}
-                />
-                <div className="flex space-x-2 mt-2">
-                  <button
-                    onClick={handleExecuteQuery}
-                    disabled={executing || !query.trim() || !!isCompleted}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            {/* Подсказка */}
+            {task.hint && (
+              <div className="bg-white rounded-lg shadow p-4">
+                <button
+                  onClick={() => setShowHint(!showHint)}
+                  className="text-blue-600 hover:underline font-medium flex items-center gap-2"
+                >
+                  💡 {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+                  <svg
+                    className={`w-4 h-4 transition-transform ${showHint ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {executing ? 'Выполнение...' : 'Выполнить'}
-                  </button>
-                  {!isCompleted && (
-                    <button
-                      onClick={handleSubmit}
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                    >
-                      Отправить ответ
-                    </button>
-                  )}
-                </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showHint && (
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-gray-700 whitespace-pre-wrap">
+                    {task.hint}
+                  </div>
+                )}
               </div>
-              {queryResult && queryResult.length > 0 && (
-                <div className="mt-4 overflow-auto max-h-64">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        {Object.keys(queryResult[0]).map((col) => (
-                          <th key={col} className="px-3 py-2 text-left font-medium text-gray-500">
-                            {col}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {queryResult.map((row, idx) => (
-                        <tr key={idx}>
-                          {Object.values(row).map((val, i) => (
-                            <td key={i} className="px-3 py-2 whitespace-nowrap text-gray-700">
-                              {val !== null && val !== undefined ? String(val) : 'NULL'}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow p-4">
-              <h2 className="text-lg font-semibold">Информация</h2>
-              <dl className="mt-2 space-y-1 text-sm">
-                <dt className="text-gray-500">Тип</dt>
-                <dd className="font-medium">{task.type}</dd>
-                <dt className="text-gray-500">Сложность</dt>
-                <dd className="font-medium">{task.difficulty}</dd>
-                <dt className="text-gray-500">Баллы</dt>
-                <dd className="font-medium">{task.points}</dd>
-                {task.timeLimit && <><dt className="text-gray-500">Время</dt><dd className="font-medium">{task.timeLimit} мин</dd></>}
-                {task.attemptsLimit && <><dt className="text-gray-500">Попыток</dt><dd className="font-medium">{task.attemptsLimit}</dd></>}
-                {attempt && (
-                  <>
-                    <dt className="text-gray-500">Статус попытки</dt>
-                    <dd className={`font-medium ${
-                      attempt.status === 'PENDING' ? 'text-yellow-600' :
-                      attempt.status === 'PASSED' ? 'text-green-600' :
-                      'text-red-600'
-                    }`}>
-                      {attempt.status === 'PENDING' && 'В процессе'}
-                      {attempt.status === 'PASSED' && '✅ Выполнено'}
-                      {attempt.status === 'FAILED' && '❌ Неверно'}
-                      {attempt.status === 'TIME_EXPIRED' && '⏰ Время истекло'}
-                    </dd>
-                  </>
-                )}
-              </dl>
+          {/* Правая колонка — SQL-терминал */}
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-white rounded-lg shadow p-4 sticky top-24">
+              <h2 className="text-lg font-semibold mb-3">SQL-терминал</h2>
+              {!isCompleted ? (
+                <>
+                  <div className="border rounded">
+                    <textarea
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      rows={6}
+                      className="w-full border-0 rounded-t px-3 py-2 font-mono text-sm focus:ring-0"
+                      placeholder="Введите SQL-запрос (SELECT ...)"
+                      disabled={submitting}
+                    />
+                    <div className="bg-gray-50 px-3 py-2 border-t flex justify-between items-center">
+                      <span className="text-xs text-gray-400">SQL-запрос</span>
+                      <button
+                        onClick={handleExecuteQuery}
+                        disabled={executing || submitting || !query.trim()}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {executing ? 'Выполнение...' : '▶ Выполнить'}
+                      </button>
+                    </div>
+                  </div>
+                  {error && <div className="text-red-500 text-sm">{error}</div>}
+                  {queryResult && (
+                    <div className="mt-3 overflow-auto max-h-48 border rounded">
+                      {queryResult.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200 text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              {Object.keys(queryResult[0]).map((col) => (
+                                <th key={col} className="px-3 py-2 text-left font-medium text-gray-500">
+                                  {col}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {queryResult.map((row, idx) => (
+                              <tr key={idx}>
+                                {Object.values(row).map((val, i) => (
+                                  <td key={i} className="px-3 py-2 whitespace-nowrap text-gray-700">
+                                    {val !== null && val !== undefined ? String(val) : 'NULL'}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-3 text-gray-500">Запрос выполнен успешно, но не вернул данных</div>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex space-x-2 mt-3">
+                    <button
+                      onClick={handleSubmit}
+                      disabled={submitting}
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full disabled:opacity-50"
+                    >
+                      {submitting ? 'Отправка...' : 'Отправить ответ'}
+                    </button>
+                  </div>
+                  {task.expectedResult && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      💡 Ожидаемый результат: <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{task.expectedResult}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div
+                  className={`p-4 rounded ${
+                    result.status === 'PASSED'
+                      ? 'bg-green-100 text-green-800 border border-green-300'
+                      : 'bg-red-100 text-red-800 border border-red-300'
+                  }`}
+                >
+                  <p className="font-medium text-lg">
+                    {result.status === 'PASSED' ? '✅ Задание выполнено!' : '❌ Задание не выполнено'}
+                  </p>
+                  <p className="mt-1">Оценка: <span className="font-bold">{result.score}%</span></p>
+                  {result.feedback && <p className="mt-2 text-sm">{result.feedback}</p>}
+                  {attempt?.completedAt && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      Завершено: {new Date(attempt.completedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-
-            {isCompleted && (
-              <div className={`bg-white rounded-lg shadow p-4 border-l-4 ${result.status === 'PASSED' ? 'border-green-500' : 'border-red-500'}`}>
-                <h2 className="text-lg font-semibold">Результат</h2>
-                <p className="mt-1 font-medium">Баллы: {result.score}</p>
-                <p className="text-sm">{result.feedback}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

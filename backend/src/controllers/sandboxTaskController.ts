@@ -92,7 +92,6 @@ export const createTask = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Название и описание обязательны' });
   }
 
-  // @ts-ignore – поле config существует в схеме и БД, но TypeScript его не видит
   const task = await prisma.sandboxTask.create({
     data: {
       title,
@@ -134,9 +133,10 @@ export const updateTask = async (req: Request, res: Response) => {
     config,
   } = req.body;
 
+  // Исправлено: добавлен config в select
   const existing = await prisma.sandboxTask.findUnique({
     where: { id: Number(id) },
-    select: { createdBy: true },
+    select: { createdBy: true, config: true },
   });
   if (!existing) return res.status(404).json({ error: 'Задание не найдено' });
 
@@ -144,7 +144,6 @@ export const updateTask = async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Вы не можете редактировать это задание' });
   }
 
-  // @ts-ignore – поле config существует в схеме и БД, но TypeScript его не видит
   const updated = await prisma.sandboxTask.update({
     where: { id: Number(id) },
     data: {

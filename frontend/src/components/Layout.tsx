@@ -27,7 +27,6 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
           <Link to="/" className="flex items-center space-x-2">
             <img src="/logo.png" alt="Логотип SPK CyberLab" className="h-8 w-auto" />
             <span className="text-xl font-bold text-blue-600">SPK CyberLab</span>
-            <span className="text-xs text-gray-500 hidden sm:inline">| Образовательная платформа</span>
           </Link>
 
           {/* Основное меню (десктоп и планшет) */}

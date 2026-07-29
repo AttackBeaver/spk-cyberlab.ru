@@ -17,6 +17,27 @@ interface Template {
   };
 }
 
+interface TaskData {
+  id: number;
+  title: string;
+  description: string;
+  instructions: string | null;
+  type: string;
+  difficulty: number;
+  timeLimit: number | null;
+  attemptsLimit: number | null;
+  points: number;
+  config: {
+    schema: string;
+    data: Record<string, unknown[]>;
+    expectedResult?: string;
+    hint?: string;
+  } | null;
+  htmlTemplate: string | null;
+  expectedResult: string | null;
+  templateId: number | null;
+}
+
 interface ApiError {
   response?: {
     data?: {
@@ -49,6 +70,7 @@ const TeacherSandboxSQLCreator = () => {
   const [expectedResult, setExpectedResult] = useState('');
   const [hint, setHint] = useState('');
 
+  // Загрузка списка шаблонов
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -59,11 +81,6 @@ const TeacherSandboxSQLCreator = () => {
         setTemplates(sqlTemplates);
         if (sqlTemplates.length > 0) {
           setSelectedTemplate(sqlTemplates[0].id);
-          const config = sqlTemplates[0].defaultConfig;
-          if (config) {
-            setSchema(config.schema || '');
-            setInitialData(config.data ? JSON.stringify(config.data, null, 2) : '');
-          }
         }
       } catch {
         setTemplates([]);
@@ -72,19 +89,65 @@ const TeacherSandboxSQLCreator = () => {
     fetchTemplates();
   }, []);
 
+  // Загрузка задания для редактирования (только если есть taskId)
   useEffect(() => {
-    const loadTemplateConfig = async () => {
-      const template = templates.find(t => t.id === selectedTemplate);
+    const fetchTask = async () => {
+      if (!taskId) return;
+      try {
+        const res = await api.get(`/sandbox/${taskId}`);
+        const task: TaskData = res.data;
+        setTitle(task.title);
+        setDescription(task.description);
+        setInstructions(task.instructions || '');
+        setDifficulty(task.difficulty);
+        setPoints(task.points);
+        setTimeLimit(task.timeLimit);
+        setAttemptsLimit(task.attemptsLimit);
+        setExpectedResult(task.expectedResult || '');
+        if (task.config) {
+          setSchema(task.config.schema || '');
+          setInitialData(task.config.data ? JSON.stringify(task.config.data, null, 2) : '');
+          setHint(task.config.hint || '');
+        }
+        if (task.templateId) {
+          setSelectedTemplate(task.templateId);
+        }
+      } catch (err) {
+        setError('Ошибка загрузки задания');
+        console.error(err);
+      }
+    };
+    fetchTask();
+  }, [taskId]);
+
+  // Обработчик выбора шаблона — здесь обновляем поля (без эффекта)
+  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const templateId = e.target.value ? Number(e.target.value) : null;
+    setSelectedTemplate(templateId);
+
+    // Если выбран шаблон и это новое задание (нет taskId) — заполняем поля
+    if (templateId && !taskId) {
+      const template = templates.find(t => t.id === templateId);
       if (template) {
         const config = template.defaultConfig;
         if (config) {
           setSchema(config.schema || '');
           setInitialData(config.data ? JSON.stringify(config.data, null, 2) : '');
+          setExpectedResult(config.expectedResult || '');
+          setHint(config.hint || '');
+          // Если название и описание пустые — подставляем из шаблона
+          if (!title) setTitle(template.name);
+          if (!description) setDescription(template.description);
         }
       }
-    };
-    loadTemplateConfig();
-  }, [selectedTemplate, templates]);
+    } else if (!templateId && !taskId) {
+      // Если шаблон снят — очищаем поля (только для нового задания)
+      setSchema('');
+      setInitialData('');
+      setExpectedResult('');
+      setHint('');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,8 +181,8 @@ const TeacherSandboxSQLCreator = () => {
       config: {
         schema,
         data: dataObj,
-        expectedResult,
-        hint,
+        expectedResult: expectedResult || null,
+        hint: hint || null,
       },
       htmlTemplate: null,
       expectedResult: expectedResult || null,
@@ -137,12 +200,8 @@ const TeacherSandboxSQLCreator = () => {
         setTimeout(() => navigate('/teacher/sandbox'), 1500);
       }
     } catch (err) {
-      let msg = 'Ошибка сохранения задания';
-      if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as ApiError;
-        msg = errObj.response?.data?.error || msg;
-      }
-      setError(msg);
+      const errorObj = err as ApiError;
+      setError(errorObj.response?.data?.error || '❌ Ошибка сохранения задания');
     } finally {
       setLoading(false);
     }
@@ -186,7 +245,7 @@ const TeacherSandboxSQLCreator = () => {
               <label className="block text-sm font-medium">Шаблон (необязательно)</label>
               <select
                 value={selectedTemplate || ''}
-                onChange={(e) => setSelectedTemplate(Number(e.target.value) || null)}
+                onChange={handleTemplateChange}
                 className="w-full border rounded px-3 py-2"
               >
                 <option value="">Без шаблона</option>

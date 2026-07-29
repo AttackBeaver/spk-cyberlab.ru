@@ -3,6 +3,17 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { AxiosError } from 'axios'; // <-- добавлен импорт
+
+interface Template {
+  id: number;
+  name: string;
+  description: string;
+  type: string;
+  configSchema: Record<string, unknown>;
+  defaultConfig: Record<string, unknown>;
+  previewHtml: string | null;
+}
 
 interface Task {
   id: number;
@@ -17,6 +28,8 @@ interface Task {
   answerTemplate: string | null;
   htmlTemplate: string | null;
   expectedResult: string | null;
+  config: Record<string, unknown> | null;
+  templateId: number | null;
   creator: { fullName: string };
   groups: { group: { id: number; name: string } }[];
 }
@@ -34,13 +47,33 @@ interface ApiError {
   };
 }
 
+// Интерфейс для отправляемых данных
+interface SandboxTaskPayload {
+  title: string;
+  description: string;
+  instructions: string | null;
+  type: string;
+  difficulty: number;
+  timeLimit: number | null;
+  attemptsLimit: number | null;
+  points: number;
+  answerTemplate: string | null;
+  htmlTemplate: string | null;
+  expectedResult: string | null;
+  config: Record<string, unknown> | null;
+  templateId?: number;
+}
+
 const TeacherSandbox = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
 
+  // Состояния для формы
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
@@ -54,12 +87,16 @@ const TeacherSandbox = () => {
   const [answerTemplate, setAnswerTemplate] = useState('');
   const [htmlTemplate, setHtmlTemplate] = useState('');
   const [expectedResult, setExpectedResult] = useState('');
+  const [config, setConfig] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
+  // Назначение групп
   const [assignTaskId, setAssignTaskId] = useState<number | null>(null);
   const [selectedGroups, setSelectedGroups] = useState<number[]>([]);
 
+  // Загрузка данных
   const fetchTasks = async () => {
     try {
       const res = await api.get('/sandbox');
@@ -80,16 +117,30 @@ const TeacherSandbox = () => {
     }
   };
 
+  const fetchTemplates = async () => {
+    try {
+      const res = await api.get('/sandbox/templates');
+      setTemplates(res.data);
+    } catch (err) {
+      console.error('Ошибка загрузки шаблонов:', err);
+      if (err instanceof AxiosError) {
+        console.error('Ответ сервера:', err.response?.data);
+      }
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (user) {
         await fetchTasks();
         await fetchGroups();
+        await fetchTemplates();
       }
     };
     loadData();
   }, [user]);
 
+  // Сброс формы
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
@@ -104,10 +155,25 @@ const TeacherSandbox = () => {
     setAnswerTemplate('');
     setHtmlTemplate('');
     setExpectedResult('');
+    setConfig('');
+    setSelectedTemplateId(null);
     setFormError('');
     setFormSuccess('');
   };
 
+  // Заполнение формы из шаблона
+  const applyTemplate = (template: Template) => {
+    setSelectedTemplateId(template.id);
+    setType(template.type);
+    setTitle(template.name);
+    setDescription(template.description);
+    setHtmlTemplate(template.previewHtml || '');
+    if (template.defaultConfig) {
+      setConfig(JSON.stringify(template.defaultConfig, null, 2));
+    }
+  };
+
+  // Редактирование задания
   const handleEdit = (task: Task) => {
     setEditingId(task.id);
     setTitle(task.title);
@@ -121,29 +187,46 @@ const TeacherSandbox = () => {
     setAnswerTemplate(task.answerTemplate || '');
     setHtmlTemplate(task.htmlTemplate || '');
     setExpectedResult(task.expectedResult || '');
+    setConfig(task.config ? JSON.stringify(task.config, null, 2) : '');
+    setSelectedTemplateId(task.templateId || null);
     setShowForm(true);
     setFormError('');
     setFormSuccess('');
   };
 
+  // Создание/обновление задания
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
+
+    let parsedConfig: Record<string, unknown> | null = null;
+    if (config.trim()) {
+      try {
+        parsedConfig = JSON.parse(config) as Record<string, unknown>;
+      } catch {
+        setFormError('Некорректный JSON в конфиге');
+        return;
+      }
+    }
+
+    const payload: SandboxTaskPayload = {
+      title,
+      description,
+      instructions: instructions || null,
+      type,
+      difficulty,
+      timeLimit,
+      attemptsLimit,
+      points,
+      answerTemplate: answerTemplate || null,
+      htmlTemplate: htmlTemplate || null,
+      expectedResult: expectedResult || null,
+      config: parsedConfig,
+      templateId: selectedTemplateId || undefined,
+    };
+
     try {
-      const payload = {
-        title,
-        description,
-        instructions,
-        type,
-        difficulty,
-        timeLimit,
-        attemptsLimit,
-        points,
-        answerTemplate,
-        htmlTemplate,
-        expectedResult,
-      };
       if (editingId) {
         await api.put(`/sandbox/${editingId}`, payload);
         setFormSuccess('✅ Задание обновлено');
@@ -154,30 +237,24 @@ const TeacherSandbox = () => {
       resetForm();
       await fetchTasks();
     } catch (err) {
-      let msg = 'Ошибка сохранения задания';
-      if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as ApiError;
-        msg = errObj.response?.data?.error || msg;
-      }
-      setFormError(msg);
+      const errorObj = err as ApiError;
+      setFormError(errorObj.response?.data?.error || '❌ Ошибка сохранения задания');
     }
   };
 
+  // Удаление задания
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить это задание?')) return;
     try {
       await api.delete(`/sandbox/${id}`);
       await fetchTasks();
     } catch (err) {
-      let msg = 'Ошибка удаления';
-      if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as ApiError;
-        msg = errObj.response?.data?.error || msg;
-      }
-      alert(msg);
+      const errorObj = err as ApiError;
+      alert(errorObj.response?.data?.error || 'Ошибка удаления');
     }
   };
 
+  // Назначение групп
   const openAssignModal = (taskId: number, currentGroupIds: number[]) => {
     setAssignTaskId(taskId);
     setSelectedGroups(currentGroupIds);
@@ -191,12 +268,8 @@ const TeacherSandbox = () => {
       setAssignTaskId(null);
       await fetchTasks();
     } catch (err) {
-      let msg = 'Ошибка назначения';
-      if (err && typeof err === 'object' && 'response' in err) {
-        const errObj = err as ApiError;
-        msg = errObj.response?.data?.error || msg;
-      }
-      alert(msg);
+      const errorObj = err as ApiError;
+      alert(errorObj.response?.data?.error || 'Ошибка назначения');
     }
   };
 
@@ -204,6 +277,30 @@ const TeacherSandbox = () => {
     setSelectedGroups(prev =>
       prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
     );
+  };
+
+  // Удаление шаблона (только ADMIN)
+  const handleDeleteTemplate = async (templateId: number) => {
+    if (!confirm('Удалить шаблон? (Задания, созданные из него, останутся)')) return;
+    try {
+      await api.delete(`/sandbox/templates/${templateId}`);
+      await fetchTemplates();
+    } catch (err) {
+      const errorObj = err as ApiError;
+      alert(errorObj.response?.data?.error || 'Ошибка удаления шаблона');
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      SQL_INJECTION: 'SQL-инъекция',
+      XSS: 'XSS-атака',
+      PHISHING: 'Фишинг',
+      CODE: 'Программирование',
+      DATABASE: 'База данных',
+      CUSTOM: 'Кастомное',
+    };
+    return map[type] || type;
   };
 
   if (!user || (user.role !== 'TEACHER' && user.role !== 'ADMIN')) {
@@ -224,6 +321,12 @@ const TeacherSandbox = () => {
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
               + Создать задание
+            </button>
+            <button
+              onClick={() => setShowTemplates(!showTemplates)}
+              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+            >
+              {showTemplates ? 'Скрыть шаблоны' : 'Шаблоны'}
             </button>
             <Link
               to="/teacher/sandbox/sql/create"
@@ -263,6 +366,7 @@ const TeacherSandbox = () => {
                     <option value="XSS">XSS-атака</option>
                     <option value="PHISHING">Фишинг</option>
                     <option value="CODE">Программирование</option>
+                    <option value="DATABASE">База данных</option>
                     <option value="CUSTOM">Кастомное</option>
                   </select>
                 </div>
@@ -289,7 +393,7 @@ const TeacherSandbox = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Лимит времени (мин, необязательно)</label>
+                  <label className="block text-sm font-medium">Лимит времени (мин)</label>
                   <input
                     type="number"
                     min="1"
@@ -299,7 +403,7 @@ const TeacherSandbox = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Лимит попыток (необязательно)</label>
+                  <label className="block text-sm font-medium">Лимит попыток</label>
                   <input
                     type="number"
                     min="1"
@@ -358,6 +462,39 @@ const TeacherSandbox = () => {
                   placeholder="Например: Добро пожаловать, admin"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium">Конфигурация (JSON) — для сложных заданий</label>
+                <textarea
+                  value={config}
+                  onChange={(e) => setConfig(e.target.value)}
+                  rows={4}
+                  className="w-full border rounded px-3 py-2 font-mono text-sm"
+                  placeholder='{"schema": "CREATE TABLE...", "data": {...}}'
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Использовать шаблон (необязательно)</label>
+                <select
+                  value={selectedTemplateId || ''}
+                  onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : null;
+                    if (id) {
+                      const template = templates.find(t => t.id === id);
+                      if (template) applyTemplate(template);
+                    } else {
+                      setSelectedTemplateId(null);
+                    }
+                  }}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="">Без шаблона</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({getTypeLabel(t.type)})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="flex space-x-2">
                 <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                   {editingId ? 'Обновить' : 'Создать'}
@@ -367,6 +504,63 @@ const TeacherSandbox = () => {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {showTemplates && (
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Шаблоны заданий</h2>
+              <Link
+                to="/teacher/sandbox/templates/create"
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+              >
+                + Создать шаблон
+              </Link>
+            </div>
+            {templates.length === 0 ? (
+              <p className="text-gray-500">Нет шаблонов</p>
+            ) : (
+              <div className="space-y-2">
+                {templates.map((template) => (
+                  <div key={template.id} className="flex justify-between items-center p-3 border rounded">
+                    <div>
+                      <span className="font-medium">{template.name}</span>
+                      <span className="ml-2 text-sm text-gray-500">{getTypeLabel(template.type)}</span>
+                      <p className="text-sm text-gray-400">{template.description}</p>
+                    </div>
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => {
+                          resetForm();
+                          applyTemplate(template);
+                          setShowForm(true);
+                        }}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        Использовать
+                      </button>
+                      {user?.role === 'ADMIN' && (
+                        <>
+                          <Link
+                            to={`/teacher/sandbox/templates/edit/${template.id}`}
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            Редактировать
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteTemplate(template.id)}
+                            className="text-red-600 hover:underline text-sm"
+                          >
+                            Удалить
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -384,11 +578,12 @@ const TeacherSandbox = () => {
                   <h3 className="font-semibold text-lg">{task.title}</h3>
                   <p className="text-gray-600 text-sm">{task.description}</p>
                   <div className="text-xs text-gray-500 mt-1">
-                    <span>Тип: {task.type}</span>
+                    <span>Тип: {getTypeLabel(task.type)}</span>
                     <span className="ml-3">Сложность: {task.difficulty}</span>
                     <span className="ml-3">Баллы: {task.points}</span>
                     {task.timeLimit && <span className="ml-3">⏱️ {task.timeLimit} мин</span>}
                     {task.attemptsLimit && <span className="ml-3">📝 {task.attemptsLimit}</span>}
+                    {task.templateId && <span className="ml-3">📋 Из шаблона</span>}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     Автор: {task.creator.fullName}
@@ -408,14 +603,12 @@ const TeacherSandbox = () => {
                   >
                     Предпросмотр
                   </Link>
-                  {task.type === 'DATABASE' && (
-                    <Link
-                      to={`/teacher/sandbox/sql/edit/${task.id}`}
-                      className="text-green-600 hover:underline text-sm"
-                    >
-                      Редактировать SQL
-                    </Link>
-                  )}
+                  <Link
+                    to={`/teacher/sandbox/reports/${task.id}`}
+                    className="text-purple-600 hover:underline text-sm"
+                  >
+                    Отчёты
+                  </Link>
                   <button onClick={() => handleEdit(task)} className="text-blue-600 hover:underline text-sm">
                     Редактировать
                   </button>
