@@ -1,5 +1,41 @@
 import { Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import prisma from '../utils/prisma';
+
+// ===== Multer настройка для изображений новостей =====
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '../../uploads/news');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'news-' + uniqueSuffix + ext);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Неподдерживаемый формат изображения'));
+    }
+  },
+});
+
+export const uploadNewsImage = upload.single('image');
+
+// ===== Основные функции =====
 
 // Получить все новости
 export const getNews = async (req: Request, res: Response) => {
@@ -95,4 +131,13 @@ export const deleteNews = async (req: Request, res: Response) => {
 
   await prisma.news.delete({ where: { id: Number(id) } });
   res.status(204).send();
+};
+
+// ===== Загрузка изображения для новости =====
+export const uploadImage = (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Файл не загружен' });
+  }
+  const imageUrl = `/uploads/news/${req.file.filename}`;
+  res.json({ imageUrl });
 };

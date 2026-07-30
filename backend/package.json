@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
-    "seed:all": "tsx prisma/seed-all-templates.ts"
+    "seed:all": "tsx prisma/seed-all-templates.ts",
+    "seed:admin": "tsx prisma/seed-admin.ts",
+    "seed:achievements": "tsx prisma/seed-achievements.ts"
   },
   "keywords": [],
   "author": "",

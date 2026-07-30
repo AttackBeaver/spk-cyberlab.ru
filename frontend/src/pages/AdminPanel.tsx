@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
+import { useDropzone } from 'react-dropzone';
 
 // ---------- Интерфейсы ----------
 interface Group {
@@ -13,14 +14,12 @@ interface Group {
     fullName: string;
     studentNumber: number;
     username: string;
-    // email удалён
   }[];
 }
 
 interface User {
   id: number;
   username: string;
-  // email удалён
   fullName: string;
   role: string;
   groupId: number | null;
@@ -33,7 +32,7 @@ interface Course {
   title: string;
   description: string;
   teacherId: number;
-  teacher: { id: number; fullName: string }; // email удалён
+  teacher: { id: number; fullName: string };
   createdAt: string;
 }
 
@@ -58,11 +57,10 @@ interface BugReport {
   status: string;
   adminResponse: string | null;
   createdAt: string;
-  user: { fullName: string }; // email удалён
+  user: { fullName: string };
   responder?: { fullName: string };
 }
 
-// Тип для модального окна
 type ModalType =
   | 'createGroup'
   | 'addStudents'
@@ -73,7 +71,6 @@ type ModalType =
   | 'editGroup'
   | null;
 
-// Тип для ошибки API
 type ApiError = {
   response?: {
     data?: {
@@ -82,7 +79,6 @@ type ApiError = {
   };
 };
 
-// Тип для payload при создании курса
 type CreateCoursePayload = {
   title: string;
   description: string;
@@ -90,7 +86,6 @@ type CreateCoursePayload = {
   groupIds?: number[];
 };
 
-// ---------- Компонент ----------
 const AdminPanel = () => {
   const { user } = useAuth();
 
@@ -120,7 +115,7 @@ const AdminPanel = () => {
   const [groupPrefix, setGroupPrefix] = useState('');
   const [groupYear, setGroupYear] = useState(new Date().getFullYear());
 
-  // Добавление студентов (ручной ввод и файл)
+  // Добавление студентов
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [studentsInput, setStudentsInput] = useState('');
   const [studentsFile, setStudentsFile] = useState<File | null>(null);
@@ -130,11 +125,9 @@ const AdminPanel = () => {
   const [editUserId, setEditUserId] = useState<number | null>(null);
   const [editUsername, setEditUsername] = useState('');
   const [editFullName, setEditFullName] = useState('');
-  // editEmail удалён
 
   // Создание преподавателя
   const [teacherUsername, setTeacherUsername] = useState('');
-  // teacherEmail удалён
   const [teacherFullName, setTeacherFullName] = useState('');
   const [teacherPassword, setTeacherPassword] = useState('');
 
@@ -143,6 +136,13 @@ const AdminPanel = () => {
   const [courseDescription, setCourseDescription] = useState('');
   const [courseTeacherId, setCourseTeacherId] = useState<number | null>(null);
   const [courseGroupIds, setCourseGroupIds] = useState<number[]>([]);
+
+  // ---- Редактирование курса ----
+  const [editCourseId, setEditCourseId] = useState<number | null>(null);
+  const [editCourseTitle, setEditCourseTitle] = useState('');
+  const [editCourseDescription, setEditCourseDescription] = useState('');
+  const [editCourseTeacherId, setEditCourseTeacherId] = useState<number | null>(null);
+  const [editCourseGroupIds, setEditCourseGroupIds] = useState<number[]>([]);
 
   // ---- Новости ----
   const [newsLoading, setNewsLoading] = useState(false);
@@ -154,6 +154,10 @@ const AdminPanel = () => {
   const [newsImageUrl, setNewsImageUrl] = useState('');
   const [newsFormError, setNewsFormError] = useState('');
   const [newsFormSuccess, setNewsFormSuccess] = useState('');
+
+  // Состояния для drag-and-drop изображения
+  const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // ---- Bug Bounty ----
   const [bugLoading, setBugLoading] = useState(false);
@@ -276,7 +280,6 @@ const AdminPanel = () => {
       showMessage('❌ Выберите группу');
       return;
     }
-    // Сначала парсим ручной ввод
     let studentsList: { fullName: string; studentNumber: number }[] = [];
     if (studentsInput.trim()) {
       studentsList = studentsInput
@@ -301,7 +304,6 @@ const AdminPanel = () => {
         .filter((s): s is { fullName: string; studentNumber: number } => s !== null);
     }
 
-    // Если есть файл, читаем его
     if (studentsFile) {
       try {
         const text = await studentsFile.text();
@@ -400,7 +402,6 @@ const AdminPanel = () => {
       await api.put(`/admin/users/${editUserId}`, {
         username: editUsername,
         fullName: editFullName,
-        // email удалён
       });
       showMessage('✅ Данные пользователя обновлены');
       setModalType(null);
@@ -415,7 +416,6 @@ const AdminPanel = () => {
     setEditUserId(user.id);
     setEditUsername(user.username || '');
     setEditFullName(user.fullName);
-    // editEmail не используется
     setModalType('editUser');
   };
 
@@ -425,7 +425,6 @@ const AdminPanel = () => {
     try {
       await api.post('/admin/teachers', {
         username: teacherUsername,
-        // email удалён
         fullName: teacherFullName,
         password: teacherPassword,
       });
@@ -441,47 +440,112 @@ const AdminPanel = () => {
     }
   };
 
-  // ---- Курсы ----
+  // ---- Курсы: создание и редактирование ----
   const handleCreateCourse = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-        const payload: CreateCoursePayload = {
-          title: courseTitle,
-          description: courseDescription,
-          teacherId: courseTeacherId,
-        };
-        if (courseGroupIds.length) payload.groupIds = courseGroupIds;
-        await api.post('/courses', payload);
-        showMessage('✅ Курс создан');
-        setCourseTitle('');
-        setCourseDescription('');
-        setCourseTeacherId(null);
-        setCourseGroupIds([]);
-        setModalType(null);
-        await fetchCourses();
-      } catch (err) {
-        const error = err as ApiError;
-        showMessage(error.response?.data?.error || '❌ Ошибка создания курса');
-      }
-    };
+    e.preventDefault();
+    try {
+      const payload: CreateCoursePayload = {
+        title: courseTitle,
+        description: courseDescription,
+        teacherId: courseTeacherId,
+      };
+      if (courseGroupIds.length) payload.groupIds = courseGroupIds;
+      await api.post('/courses', payload);
+      showMessage('✅ Курс создан');
+      setCourseTitle('');
+      setCourseDescription('');
+      setCourseTeacherId(null);
+      setCourseGroupIds([]);
+      setModalType(null);
+      await fetchCourses();
+    } catch (err) {
+      const error = err as ApiError;
+      showMessage(error.response?.data?.error || '❌ Ошибка создания курса');
+    }
+  };
 
   const handleDeleteCourse = async (courseId: number) => {
-      if (!confirm('Удалить курс?')) return;
-      try {
-        await api.delete(`/courses/${courseId}`);
-        showMessage('✅ Курс удалён');
-        await fetchCourses();
-      } catch (err) {
-        const error = err as ApiError;
-        showMessage(error.response?.data?.error || '❌ Ошибка удаления курса');
-      }
-    };
+    if (!confirm('Удалить курс?')) return;
+    try {
+      await api.delete(`/courses/${courseId}`);
+      showMessage('✅ Курс удалён');
+      await fetchCourses();
+    } catch (err) {
+      const error = err as ApiError;
+      showMessage(error.response?.data?.error || '❌ Ошибка удаления курса');
+    }
+  };
 
-  // ---- Новости ----
+  const openEditCourse = (course: Course) => {
+    setEditCourseId(course.id);
+    setEditCourseTitle(course.title);
+    setEditCourseDescription(course.description || '');
+    setEditCourseTeacherId(course.teacherId);
+    // Загружаем текущие группы курса (если есть связь) — пока пропустим, так как у нас нет поля groups в Course
+    // Можно добавить отдельный запрос, но для простоты оставим пустым, преподаватель может переназначить
+    setEditCourseGroupIds([]);
+    setModalType('editCourse');
+  };
+
+  const handleUpdateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCourseId) return;
+    try {
+      const payload: CreateCoursePayload = {
+        title: editCourseTitle,
+        description: editCourseDescription,
+        teacherId: editCourseTeacherId,
+      };
+      if (editCourseGroupIds.length) payload.groupIds = editCourseGroupIds;
+      await api.put(`/courses/${editCourseId}`, payload);
+      showMessage('✅ Курс обновлён');
+      setEditCourseId(null);
+      setEditCourseTitle('');
+      setEditCourseDescription('');
+      setEditCourseTeacherId(null);
+      setEditCourseGroupIds([]);
+      setModalType(null);
+      await fetchCourses();
+    } catch (err) {
+      const error = err as ApiError;
+      showMessage(error.response?.data?.error || '❌ Ошибка обновления курса');
+    }
+  };
+
+  // ---- НОВОСТИ: загрузка изображения через drag-and-drop ----
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+    setNewsImagePreview(URL.createObjectURL(file));
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await api.post('/news/upload-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setNewsImageUrl(res.data.imageUrl);
+      showMessage('✅ Изображение загружено');
+    } catch (err) {
+      const error = err as ApiError;
+      showMessage(error.response?.data?.error || '❌ Ошибка загрузки изображения');
+    } finally {
+      setUploadingImage(false);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': [] },
+    maxSize: 5 * 1024 * 1024,
+    multiple: false,
+  });
+
   const resetNewsForm = () => {
     setNewsTitle('');
     setNewsContent('');
     setNewsImageUrl('');
+    setNewsImagePreview(null);
     setEditingNewsId(null);
     setNewsFormError('');
     setNewsFormSuccess('');
@@ -493,6 +557,11 @@ const AdminPanel = () => {
     setNewsTitle(item.title);
     setNewsContent(item.content);
     setNewsImageUrl(item.imageUrl || '');
+    if (item.imageUrl) {
+      setNewsImagePreview(item.imageUrl);
+    } else {
+      setNewsImagePreview(null);
+    }
     setShowNewsForm(true);
     setNewsFormError('');
     setNewsFormSuccess('');
@@ -718,7 +787,6 @@ const AdminPanel = () => {
                     required
                   />
                 </div>
-                {/* поле Email удалено */}
                 <div className="flex justify-end space-x-2">
                   <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
                     Отмена
@@ -748,7 +816,6 @@ const AdminPanel = () => {
                     required
                   />
                 </div>
-                {/* поле Email удалено */}
                 <div>
                   <label className="block text-sm font-medium">Полное имя</label>
                   <input
@@ -848,6 +915,78 @@ const AdminPanel = () => {
                   </button>
                   <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     Создать
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+
+      case 'editCourse':
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+              <h2 className="text-xl font-semibold mb-4">Редактировать курс</h2>
+              <form onSubmit={handleUpdateCourse} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium">Название</label>
+                  <input
+                    type="text"
+                    value={editCourseTitle}
+                    onChange={(e) => setEditCourseTitle(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Описание</label>
+                  <textarea
+                    value={editCourseDescription}
+                    onChange={(e) => setEditCourseDescription(e.target.value)}
+                    rows={3}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Преподаватель</label>
+                  <select
+                    value={editCourseTeacherId || ''}
+                    onChange={(e) => setEditCourseTeacherId(Number(e.target.value))}
+                    className="w-full border rounded px-3 py-2"
+                    required
+                  >
+                    <option value="">-- Выберите --</option>
+                    {getTeachers().map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.fullName} ({t.username})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Группы (зажмите Ctrl для множественного выбора)</label>
+                  <select
+                    multiple
+                    value={editCourseGroupIds.map(String)}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, (opt) => Number(opt.value));
+                      setEditCourseGroupIds(selected);
+                    }}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                    Отмена
+                  </button>
+                  <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Сохранить
                   </button>
                 </div>
               </form>
@@ -990,7 +1129,6 @@ const AdminPanel = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
-                          {/* столбец Email удалён */}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -1158,7 +1296,7 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ---------- КУРСЫ ---------- */}
+      {/* ---------- КУРСЫ (с редактированием) ---------- */}
       {activeTab === 'courses' && (
         <div>
           <div className="flex justify-between items-center mb-4">
@@ -1200,9 +1338,7 @@ const AdminPanel = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.teacher.fullName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button
-                          onClick={() => {
-                            // TODO: добавить редактирование курса
-                          }}
+                          onClick={() => openEditCourse(course)}
                           className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs mr-1"
                         >
                           Редактировать
@@ -1266,16 +1402,33 @@ const AdminPanel = () => {
                     required
                   />
                 </div>
+
+                {/* Drag-and-drop загрузка изображения */}
                 <div>
-                  <label className="block text-sm font-medium">Ссылка на изображение</label>
-                  <input
-                    type="text"
-                    value={newsImageUrl}
-                    onChange={(e) => setNewsImageUrl(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <label className="block text-sm font-medium">Изображение</label>
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
+                  >
+                    <input {...getInputProps()} />
+                    {newsImagePreview ? (
+                      <div className="flex flex-col items-center">
+                        <img src={newsImagePreview} alt="Preview" className="max-h-48 object-contain mb-2" />
+                        <p className="text-sm text-gray-500">Нажмите или перетащите, чтобы заменить изображение</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-gray-600">Перетащите изображение сюда или нажмите для выбора</p>
+                        <p className="text-xs text-gray-400 mt-1">Поддерживаются JPG, PNG, GIF, WebP до 5 МБ</p>
+                      </div>
+                    )}
+                  </div>
+                  {uploadingImage && <p className="text-sm text-blue-500 mt-1">Загрузка...</p>}
+                  {newsImageUrl && !newsImagePreview && (
+                    <p className="text-sm text-gray-500 mt-1">Текущее изображение: {newsImageUrl}</p>
+                  )}
                 </div>
+
                 <div className="flex space-x-2">
                   <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     {editingNewsId ? 'Обновить' : 'Создать'}
@@ -1301,6 +1454,9 @@ const AdminPanel = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{item.title}</h3>
                     <p className="text-gray-600 text-sm line-clamp-2">{item.content}</p>
+                    {item.imageUrl && (
+                      <img src={item.imageUrl} alt={item.title} className="mt-2 h-24 w-auto object-cover rounded" />
+                    )}
                     <div className="text-xs text-gray-400 mt-1">
                       {item.author.fullName} • {new Date(item.createdAt).toLocaleDateString()}
                     </div>
@@ -1329,9 +1485,7 @@ const AdminPanel = () => {
 
           {bugMessage && (
             <div
-              className={`p-3 mb-4 rounded ${
-                bugMessage.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}
+              className={`p-3 mb-4 rounded ${bugMessage.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
             >
               {bugMessage}
             </div>

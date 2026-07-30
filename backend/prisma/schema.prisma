@@ -53,6 +53,8 @@ model Group {
   createdAt    DateTime @default(now())
   // === Добавлено для полигона ===
   sandboxTaskGroups SandboxTaskGroup[]
+  // === Добавлено для курсов ===
+  courses      CourseGroup[] // группы, имеющие доступ к курсам
 }
 
 model Course {
@@ -61,10 +63,42 @@ model Course {
   description  String?
   teacherId    Int
   teacher      User     @relation("TeacherCourses", fields: [teacherId], references: [id])
-  modules      Module[]
+  // === СТАРЫЕ СВЯЗИ (будут заменены на lectures) ===
+  modules      Module[] // устаревает, оставлено для обратной совместимости
+  // === НОВЫЕ СВЯЗИ ===
+  lectures     Lecture[]      // список лекций (PDF)
+  groups       CourseGroup[]  // группы, имеющие доступ к курсу
   createdAt    DateTime @default(now())
 }
 
+// === НОВЫЕ МОДЕЛИ ДЛЯ КУРСОВ ===
+
+// Связь курса с группами (доступ студентов)
+model CourseGroup {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([courseId, groupId])
+}
+
+// Лекция (заменяет модули, темы, задания)
+model Lecture {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  fileUrl     String?
+  order       Int      @default(0)
+  courseId    Int
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// === СТАРЫЕ МОДЕЛИ (оставлены для обратной совместимости, но не используются) ===
 model Module {
   id           Int      @id @default(autoincrement())
   title        String

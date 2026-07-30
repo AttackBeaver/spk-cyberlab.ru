@@ -1,26 +1,35 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 
-// Получить все курсы (для всех пользователей)
+// Получить все курсы (для всех пользователей) с лекциями и группами
 export const getAllCourses = async (req: Request, res: Response) => {
   const courses = await prisma.course.findMany({
-    include: { teacher: { select: { fullName: true } } }, // email удалён
+    include: {
+      teacher: { select: { fullName: true } },
+      lectures: {
+        select: { id: true, title: true, fileUrl: true },
+        orderBy: { order: 'asc' },
+      },
+      groups: {
+        select: { groupId: true },
+      },
+    },
   });
   res.json(courses);
 };
 
-// Получить курс по ID с модулями и темами
+// Получить курс по ID с лекциями, группами и преподавателем
 export const getCourseById = async (req: Request, res: Response) => {
   const { id } = req.params;
   const course = await prisma.course.findUnique({
     where: { id: Number(id) },
     include: {
-      teacher: { select: { fullName: true } }, // email удалён
-      modules: {
-        include: {
-          topics: { include: { tasks: true } },
-        },
+      teacher: { select: { fullName: true } },
+      lectures: {
         orderBy: { order: 'asc' },
+      },
+      groups: {
+        select: { groupId: true },
       },
     },
   });
@@ -93,28 +102,32 @@ export const deleteCourse = async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
+  // Удаляем связанные лекции и связи с группами автоматически через каскад
   await prisma.course.delete({ where: { id: Number(id) } });
   res.status(204).send();
 };
 
+// Получить курсы преподавателя (с лекциями и группами)
 export const getTeacherCourses = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
   const courses = await prisma.course.findMany({
     where: { teacherId: userId },
-    include: { teacher: { select: { fullName: true } } }, // email удалён
+    include: {
+      teacher: { select: { fullName: true } },
+      lectures: {
+        select: { id: true, title: true, fileUrl: true },
+        orderBy: { order: 'asc' },
+      },
+      groups: {
+        select: { groupId: true },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
   res.json(courses);
 };
 
+// Получить мои курсы (псевдоним для getTeacherCourses)
 export const getMyCourses = async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
-  const courses = await prisma.course.findMany({
-    where: { teacherId: userId },
-    include: {
-      teacher: { select: { fullName: true } }, // email удалён
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-  res.json(courses);
+  return getTeacherCourses(req, res);
 };

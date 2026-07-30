@@ -8,7 +8,7 @@ interface Course {
   id: number;
   title: string;
   description: string;
-  teacher: { fullName: string }; // email удалён
+  teacher: { fullName: string };
   createdAt: string;
 }
 
@@ -132,10 +132,10 @@ const TeacherCourses = () => {
                 </div>
                 <div className="mt-4 space-x-2">
                   <Link
-                    to={`/teacher/course/${course.id}/edit`}
+                    to={`/course/${course.id}/manage`}
                     className="text-blue-600 hover:underline"
                   >
-                    Редактировать
+                    Управление
                   </Link>
                   <button
                     onClick={() => {/* позже реализуем удаление */}}

@@ -15,6 +15,7 @@ const News = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -30,6 +31,14 @@ const News = () => {
     fetchNews();
   }, []);
 
+  const openImage = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const closeImage = () => {
+    setSelectedImage(null);
+  };
+
   if (loading) return <Layout><div className="text-center py-8">Загрузка...</div></Layout>;
   if (error) return <Layout><div className="text-red-500 text-center py-8">{error}</div></Layout>;
 
@@ -44,11 +53,16 @@ const News = () => {
             news.map((item) => (
               <div key={item.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
                 {item.imageUrl && (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-48 object-cover rounded-md mb-4"
-                  />
+                  <div
+                    className="w-full overflow-hidden rounded-md mb-4 cursor-pointer"
+                    onClick={() => openImage(item.imageUrl!)}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-auto max-h-96 object-contain hover:opacity-90 transition"
+                    />
+                  </div>
                 )}
                 <h2 className="text-2xl font-semibold mb-2">{item.title}</h2>
                 <p className="text-gray-700 mb-4">{item.content}</p>
@@ -62,6 +76,31 @@ const News = () => {
           )}
         </div>
       </div>
+
+      {/* Модальное окно для просмотра изображения */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={closeImage}
+        >
+          <div
+            className="relative max-w-4xl w-full max-h-full overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeImage}
+              className="absolute top-2 right-2 text-white text-3xl hover:text-gray-300 z-10"
+            >
+              ×
+            </button>
+            <img
+              src={selectedImage}
+              alt="Просмотр"
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

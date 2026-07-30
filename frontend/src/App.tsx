@@ -7,9 +7,7 @@ import Courses from './pages/Courses';
 import TeacherCourses from './pages/TeacherCourses';
 import { useAuth } from './hooks/useAuth';
 import Layout from './components/Layout';
-import CourseDetails from './pages/CourseDetails';
-import TaskPage from './pages/TaskPage';
-import TeacherCourseEdit from './pages/TeacherCourseEdit';
+import CourseDetail from './pages/CourseDetails';
 import Memes from './pages/Memes';
 import Profile from './pages/Profile';
 import About from './pages/About';
@@ -35,6 +33,7 @@ import TeacherSandboxSQLCreator from './pages/TeacherSandboxSQLCreator';
 import TaskExecutionSQL from './pages/TaskExecutionSQL';
 import TeacherSandboxTemplateCreator from './pages/TeacherSandboxTemplateCreator';
 import TeacherSandboxReports from './pages/TeacherSandboxReports';
+import CourseManage from './pages/CourseManage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -58,12 +57,8 @@ function App() {
           path="/admin"
           element={user?.role === 'ADMIN' ? <Layout><AdminPanel /></Layout> : <Navigate to="/" />}
         />
-        <Route path="/course/:id" element={user ? <CourseDetails /> : <Navigate to="/login" />} />
-        <Route path="/task/:taskId" element={user ? <TaskPage /> : <Navigate to="/login" />} />
-        <Route
-          path="/teacher/course/:courseId/edit"
-          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherCourseEdit /> : <Navigate to="/" />}
-        />
+        <Route path="/course/:id" element={user ? <CourseDetail /> : <Navigate to="/login" />} />
+        {/* Старый маршрут редактирования удалён, вместо него используется /course/:courseId/manage */}
         <Route path="/memes" element={<Memes />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
         <Route path="/about" element={<About />} />
@@ -118,6 +113,10 @@ function App() {
         <Route
           path="/teacher/sandbox/reports/:taskId"
           element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherSandboxReports /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/course/:courseId/manage"
+          element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <CourseManage /> : <Navigate to="/" />}
         />
       </Routes>
     </BrowserRouter>

@@ -6,6 +6,8 @@ import {
   createNews,
   updateNews,
   deleteNews,
+  uploadNewsImage,
+  uploadImage,
 } from '../controllers/newsController';
 import { authenticate } from '../middleware/auth';
 import { allowRoles } from '../middleware/roleCheck';
@@ -21,5 +23,8 @@ router.get('/:id', getNewsById);
 router.post('/', authenticate, allowRoles('ADMIN'), createNews);
 router.put('/:id', authenticate, allowRoles('ADMIN'), updateNews);
 router.delete('/:id', authenticate, allowRoles('ADMIN'), deleteNews);
+
+// Загрузка изображения для новости (только ADMIN)
+router.post('/upload-image', authenticate, allowRoles('ADMIN'), uploadNewsImage, uploadImage);
 
 export default router;
