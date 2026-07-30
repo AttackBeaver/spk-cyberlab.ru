@@ -182,7 +182,7 @@ const TaskExecution = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="text-center py-8">Загрузка...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
       </Layout>
     );
   }
@@ -190,7 +190,7 @@ const TaskExecution = () => {
   if (error) {
     return (
       <Layout>
-        <div className="text-red-500 text-center py-8">{error}</div>
+        <div className="text-red-500 dark:text-red-400 text-center py-8">{error}</div>
       </Layout>
     );
   }
@@ -198,7 +198,7 @@ const TaskExecution = () => {
   if (!task) {
     return (
       <Layout>
-        <div className="text-red-500 text-center py-8">Задание не найдено</div>
+        <div className="text-red-500 dark:text-red-400 text-center py-8">Задание не найдено</div>
       </Layout>
     );
   }
@@ -211,51 +211,51 @@ const TaskExecution = () => {
     <Layout>
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-          <h1 className="text-2xl font-bold">{task.title}</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{task.title}</h1>
           <button
             onClick={() => navigate('/sandbox')}
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
           >
             ← К списку заданий
           </button>
         </div>
 
         {/* Информационная панель */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4 mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm transition-colors duration-300">
           <div>
-            <span className="text-gray-500">Тип:</span>
-            <span className="ml-1 font-medium">{task.type}</span>
+            <span className="text-gray-500 dark:text-gray-400">Тип:</span>
+            <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{task.type}</span>
           </div>
           <div>
-            <span className="text-gray-500">Сложность:</span>
-            <span className="ml-1 font-medium">{task.difficulty}/5</span>
+            <span className="text-gray-500 dark:text-gray-400">Сложность:</span>
+            <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{task.difficulty}/5</span>
           </div>
           <div>
-            <span className="text-gray-500">Баллы:</span>
-            <span className="ml-1 font-medium">{task.points}</span>
+            <span className="text-gray-500 dark:text-gray-400">Баллы:</span>
+            <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{task.points}</span>
           </div>
           {task.timeLimit && (
             <div>
-              <span className="text-gray-500">⏱️ Время:</span>
-              <span className="ml-1 font-medium">{task.timeLimit} мин</span>
+              <span className="text-gray-500 dark:text-gray-400">⏱️ Время:</span>
+              <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{task.timeLimit} мин</span>
             </div>
           )}
           {task.attemptsLimit && (
             <div>
-              <span className="text-gray-500">📝 Попыток:</span>
-              <span className="ml-1 font-medium">{task.attemptsLimit}</span>
+              <span className="text-gray-500 dark:text-gray-400">📝 Попыток:</span>
+              <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{task.attemptsLimit}</span>
             </div>
           )}
           {attempt && (
             <div>
-              <span className="text-gray-500">Статус:</span>
+              <span className="text-gray-500 dark:text-gray-400">Статус:</span>
               <span
                 className={`ml-1 font-medium ${
                   attempt.status === 'PENDING'
-                    ? 'text-yellow-600'
+                    ? 'text-yellow-600 dark:text-yellow-400'
                     : attempt.status === 'PASSED'
-                    ? 'text-green-600'
-                    : 'text-red-600'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
                 }`}
               >
                 {attempt.status === 'PENDING' && 'В процессе'}
@@ -267,8 +267,10 @@ const TaskExecution = () => {
           )}
           {timeLeft !== null && timeLeft > 0 && attempt?.status === 'PENDING' && (
             <div className="col-span-2 sm:col-span-1">
-              <span className="text-gray-500">⏳ Осталось:</span>
-              <span className={`ml-1 font-medium ${timeLeft < 5 ? 'text-red-600' : 'text-blue-600'}`}>
+              <span className="text-gray-500 dark:text-gray-400">⏳ Осталось:</span>
+              <span className={`ml-1 font-medium ${
+                timeLeft < 5 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'
+              }`}>
                 {formatTime(timeLeft)}
               </span>
             </div>
@@ -276,23 +278,23 @@ const TaskExecution = () => {
         </div>
 
         {/* Описание задания */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-2">Описание</h2>
-          <div className="text-gray-700 whitespace-pre-wrap">{task.description}</div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 mb-6 transition-colors duration-300">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Описание</h2>
+          <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{task.description}</div>
           {task.instructions && (
-            <div className="mt-4 p-4 bg-blue-50 rounded border border-blue-200">
-              <h3 className="font-medium text-blue-800">📌 Инструкции:</h3>
-              <p className="text-blue-700 whitespace-pre-wrap mt-1">{task.instructions}</p>
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+              <h3 className="font-medium text-blue-800 dark:text-blue-300">📌 Инструкции:</h3>
+              <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap mt-1">{task.instructions}</p>
             </div>
           )}
         </div>
 
         {/* Подсказка */}
         {task.hint && (
-          <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4 mb-6 transition-colors duration-300">
             <button
               onClick={() => setShowHint(!showHint)}
-              className="text-blue-600 hover:underline font-medium flex items-center gap-2"
+              className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
             >
               💡 {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
               <svg
@@ -305,7 +307,7 @@ const TaskExecution = () => {
               </svg>
             </button>
             {showHint && (
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-gray-700 whitespace-pre-wrap">
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                 {task.hint}
               </div>
             )}
@@ -314,15 +316,15 @@ const TaskExecution = () => {
 
         {/* HTML-макет (в iframe для безопасности) */}
         {task.htmlTemplate && (
-          <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <h2 className="text-lg font-semibold mb-3">Интерактивный макет</h2>
-            <div className="border rounded overflow-hidden bg-gray-50">
-              <div className="bg-gray-100 px-3 py-1 text-xs text-gray-500 border-b">Предпросмотр</div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4 mb-6 transition-colors duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Интерактивный макет</h2>
+            <div className="border dark:border-gray-700 rounded overflow-hidden bg-gray-50 dark:bg-gray-700">
+              <div className="bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs text-gray-500 dark:text-gray-400 border-b dark:border-gray-600">Предпросмотр</div>
               <div className="p-0 max-h-96 overflow-auto">
                 <iframe
                   srcDoc={task.htmlTemplate}
                   title="Интерактивный макет"
-                  className="w-full min-h-[300px] border-0"
+                  className="w-full min-h-[300px] border-0 dark:bg-gray-800"
                   sandbox="allow-scripts allow-same-origin"
                 />
               </div>
@@ -332,11 +334,11 @@ const TaskExecution = () => {
 
         {/* Форма ответа или результат */}
         {!isCompleted ? (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Ваш ответ</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 transition-colors duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Ваш ответ</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="answer" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="answer" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {isCodeTask ? 'Введите ваш код' : isXssTask ? 'Введите вредоносный код для XSS-атаки' : 'Введите ответ'}
                 </label>
                 <textarea
@@ -344,8 +346,8 @@ const TaskExecution = () => {
                   rows={isCodeTask ? 10 : 6}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  className={`mt-1 block w-full border rounded-md px-3 py-2 font-mono text-sm ${
-                    isCodeTask ? 'bg-gray-50' : ''
+                  className={`mt-1 block w-full border rounded-md px-3 py-2 font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 ${
+                    isCodeTask ? 'bg-gray-50 dark:bg-gray-800' : ''
                   }`}
                   placeholder={
                     isCodeTask
@@ -364,7 +366,7 @@ const TaskExecution = () => {
                     type="button"
                     onClick={handleExecuteCode}
                     disabled={executing || submitting}
-                    className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+                    className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white px-6 py-2 rounded disabled:opacity-50 transition"
                   >
                     {executing ? 'Выполнение...' : '▶ Выполнить код'}
                   </button>
@@ -372,37 +374,37 @@ const TaskExecution = () => {
               )}
 
               {output && (
-                <div className="mt-2 p-3 bg-gray-900 text-green-400 rounded font-mono text-sm overflow-auto max-h-60 whitespace-pre-wrap">
+                <div className="mt-2 p-3 bg-gray-900 dark:bg-black text-green-400 rounded font-mono text-sm overflow-auto max-h-60 whitespace-pre-wrap">
                   {output}
                 </div>
               )}
 
-              {error && <div className="text-red-500 text-sm">{error}</div>}
+              {error && <div className="text-red-500 dark:text-red-400 text-sm">{error}</div>}
 
-              <div className="flex space-x-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="submit"
                   disabled={submitting || executing}
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50 transition"
                 >
                   {submitting ? 'Отправка...' : 'Отправить ответ'}
                 </button>
                 {task.expectedResult && (
-                  <div className="text-sm text-gray-500 self-center">
-                    💡 Ожидаемый результат: <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{task.expectedResult}</span>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 self-center">
+                    💡 Ожидаемый результат: <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded dark:text-gray-300">{task.expectedResult}</span>
                   </div>
                 )}
               </div>
             </form>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Результат</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 transition-colors duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Результат</h2>
             <div
               className={`p-4 rounded ${
                 result.status === 'PASSED'
-                  ? 'bg-green-100 text-green-800 border border-green-300'
-                  : 'bg-red-100 text-red-800 border border-red-300'
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-600'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-600'
               }`}
             >
               <p className="font-medium text-lg">
@@ -411,14 +413,14 @@ const TaskExecution = () => {
               <p className="mt-1">Оценка: <span className="font-bold">{result.score}%</span></p>
               {result.feedback && <p className="mt-2 text-sm whitespace-pre-wrap">{result.feedback}</p>}
               {attempt?.completedAt && (
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                   Завершено: {new Date(attempt.completedAt).toLocaleString()}
                 </p>
               )}
             </div>
             <button
               onClick={() => navigate('/sandbox')}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded transition"
             >
               Вернуться к списку
             </button>

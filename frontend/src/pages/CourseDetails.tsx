@@ -51,7 +51,7 @@ const CourseDetails = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="text-center py-8">Загрузка...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
       </Layout>
     );
   }
@@ -59,7 +59,7 @@ const CourseDetails = () => {
   if (error || !course) {
     return (
       <Layout>
-        <div className="text-red-500 text-center py-8">{error || 'Курс не найден'}</div>
+        <div className="text-red-500 dark:text-red-400 text-center py-8">{error || 'Курс не найден'}</div>
       </Layout>
     );
   }
@@ -68,14 +68,16 @@ const CourseDetails = () => {
     <Layout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
-          <Link to="/courses" className="text-blue-600 hover:underline">← Назад к курсам</Link>
+          <Link to="/courses" className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300">
+            ← Назад к курсам
+          </Link>
         </div>
 
         {/* Информация о курсе */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 className="text-2xl font-bold mb-2">{course.title}</h1>
-          <p className="text-gray-600 mb-4">{course.description || 'Нет описания'}</p>
-          <div className="text-sm text-gray-500">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">{course.title}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{course.description || 'Нет описания'}</p>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             <p>Преподаватель: {course.teacher.fullName}</p>
             <p>Дата создания: {new Date(course.createdAt).toLocaleDateString()}</p>
             <p>Лекций: {course.lectures.length}</p>
@@ -84,7 +86,7 @@ const CourseDetails = () => {
             <div className="mt-4 flex space-x-2">
               <Link
                 to={`/course/${course.id}/manage`}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded text-sm transition"
               >
                 Управление курсом
               </Link>
@@ -94,20 +96,20 @@ const CourseDetails = () => {
 
         {/* Список лекций */}
         {course.lectures.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 text-gray-500 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 text-gray-500 dark:text-gray-400 text-center">
             В этом курсе пока нет лекций
           </div>
         ) : (
           <div className="space-y-4">
             {course.lectures.map((lecture) => (
-              <div key={lecture.id} className="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
-                <div className="flex justify-between items-start">
+              <div key={lecture.id} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4 hover:shadow-md transition">
+                <div className="flex justify-between items-start flex-wrap gap-2">
                   <div>
-                    <h3 className="text-lg font-semibold">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                       {lecture.order ? `${lecture.order}. ` : ''}{lecture.title}
                     </h3>
                     {lecture.description && (
-                      <p className="text-gray-600 text-sm mt-1">{lecture.description}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{lecture.description}</p>
                     )}
                   </div>
                   {lecture.fileUrl && (
@@ -115,7 +117,7 @@ const CourseDetails = () => {
                       href={lecture.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm whitespace-nowrap ml-4"
+                      className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded text-sm whitespace-nowrap transition"
                     >
                       Открыть
                     </a>
@@ -125,13 +127,13 @@ const CourseDetails = () => {
                   <div className="mt-3 flex space-x-2 text-sm">
                     <button
                       onClick={() => alert('Редактирование лекции будет доступно в управлении курсом')}
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Редактировать
                     </button>
                     <button
                       onClick={() => alert('Удаление лекции будет доступно в управлении курсом')}
-                      className="text-red-600 hover:underline"
+                      className="text-red-600 hover:underline dark:text-red-400 dark:hover:text-red-300"
                     >
                       Удалить
                     </button>

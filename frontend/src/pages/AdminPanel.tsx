@@ -481,8 +481,6 @@ const AdminPanel = () => {
     setEditCourseTitle(course.title);
     setEditCourseDescription(course.description || '');
     setEditCourseTeacherId(course.teacherId);
-    // Загружаем текущие группы курса (если есть связь) — пока пропустим, так как у нас нет поля groups в Course
-    // Можно добавить отдельный запрос, но для простоты оставим пустым, преподаватель может переназначить
     setEditCourseGroupIds([]);
     setModalType('editCourse');
   };
@@ -629,22 +627,22 @@ const AdminPanel = () => {
 
   const getSeverityColor = (sev: string) => {
     switch (sev) {
-      case 'LOW': return 'bg-green-100 text-green-800';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800';
-      case 'HIGH': return 'bg-orange-100 text-orange-800';
-      case 'CRITICAL': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'LOW': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'HIGH': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      case 'CRITICAL': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'NEW': return 'bg-blue-100 text-blue-800';
-      case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800';
-      case 'RESOLVED': return 'bg-green-100 text-green-800';
-      case 'WONTFIX': return 'bg-gray-100 text-gray-800';
-      case 'CLOSED': return 'bg-gray-300 text-gray-600';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'NEW': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'RESOLVED': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'WONTFIX': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      case 'CLOSED': return 'bg-gray-300 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
@@ -658,41 +656,41 @@ const AdminPanel = () => {
       case 'createGroup':
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 max-h-full overflow-auto">
-              <h2 className="text-xl font-semibold mb-4">Создать группу</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-700 max-w-md w-full p-6 max-h-full overflow-auto">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Создать группу</h2>
               <form onSubmit={handleCreateGroup} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Название группы</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Название группы</label>
                   <input
                     type="text"
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Префикс (для логинов)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Префикс (для логинов)</label>
                   <input
                     type="text"
                     value={groupPrefix}
                     onChange={(e) => setGroupPrefix(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Год</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Год</label>
                   <input
                     type="number"
                     value={groupYear}
                     onChange={(e) => setGroupYear(parseInt(e.target.value))}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                   <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -707,15 +705,15 @@ const AdminPanel = () => {
       case 'addStudents':
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 max-h-full overflow-auto">
-              <h2 className="text-xl font-semibold mb-4">Добавить студентов</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-700 max-w-lg w-full p-6 max-h-full overflow-auto">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Добавить студентов</h2>
               <form onSubmit={handleAddStudents} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Выберите группу</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Выберите группу</label>
                   <select
                     value={selectedGroupId || ''}
                     onChange={(e) => setSelectedGroupId(Number(e.target.value))}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   >
                     <option value="">-- Выберите --</option>
@@ -727,17 +725,17 @@ const AdminPanel = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Ручной ввод (ФИО\tНомер, каждый с новой строки)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Ручной ввод (ФИО\tНомер, каждый с новой строки)</label>
                   <textarea
                     value={studentsInput}
                     onChange={(e) => setStudentsInput(e.target.value)}
                     rows={5}
-                    className="w-full border rounded px-3 py-2 font-mono text-sm"
+                    className="w-full border rounded px-3 py-2 font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     placeholder="Иванов Иван\t1&#10;Петров Петр\t2"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Или импортировать из CSV/Excel (первая колонка - ФИО, вторая - номер)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Или импортировать из CSV/Excel (первая колонка - ФИО, вторая - номер)</label>
                   <input
                     type="file"
                     accept=".csv,.xlsx,.xls"
@@ -746,11 +744,11 @@ const AdminPanel = () => {
                       if (file) setStudentsFile(file);
                     }}
                     ref={fileInputRef}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                   <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
@@ -765,30 +763,30 @@ const AdminPanel = () => {
       case 'editUser':
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-semibold mb-4">Редактировать пользователя</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-700 max-w-md w-full p-6">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Редактировать пользователя</h2>
               <form onSubmit={handleEditUser} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Логин</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Логин</label>
                   <input
                     type="text"
                     value={editUsername}
                     onChange={(e) => setEditUsername(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Полное имя</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Полное имя</label>
                   <input
                     type="text"
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                   <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -803,42 +801,42 @@ const AdminPanel = () => {
       case 'createTeacher':
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-semibold mb-4">Создать преподавателя</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-700 max-w-md w-full p-6">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Создать преподавателя</h2>
               <form onSubmit={handleCreateTeacher} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Логин</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Логин</label>
                   <input
                     type="text"
                     value={teacherUsername}
                     onChange={(e) => setTeacherUsername(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Полное имя</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Полное имя</label>
                   <input
                     type="text"
                     value={teacherFullName}
                     onChange={(e) => setTeacherFullName(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Пароль</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Пароль</label>
                   <input
                     type="password"
                     value={teacherPassword}
                     onChange={(e) => setTeacherPassword(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                     minLength={6}
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                   <button type="submit" className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
@@ -853,34 +851,34 @@ const AdminPanel = () => {
       case 'createCourse':
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-semibold mb-4">Создать курс</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-700 max-w-md w-full p-6">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Создать курс</h2>
               <form onSubmit={handleCreateCourse} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Название</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Название</label>
                   <input
                     type="text"
                     value={courseTitle}
                     onChange={(e) => setCourseTitle(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Описание</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Описание</label>
                   <textarea
                     value={courseDescription}
                     onChange={(e) => setCourseDescription(e.target.value)}
                     rows={3}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Преподаватель</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Преподаватель</label>
                   <select
                     value={courseTeacherId || ''}
                     onChange={(e) => setCourseTeacherId(Number(e.target.value))}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   >
                     <option value="">-- Выберите --</option>
@@ -892,7 +890,7 @@ const AdminPanel = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Группы (зажмите Ctrl для множественного выбора)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Группы (зажмите Ctrl для множественного выбора)</label>
                   <select
                     multiple
                     value={courseGroupIds.map(String)}
@@ -900,7 +898,7 @@ const AdminPanel = () => {
                       const selected = Array.from(e.target.selectedOptions, (opt) => Number(opt.value));
                       setCourseGroupIds(selected);
                     }}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                   >
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>
@@ -910,7 +908,7 @@ const AdminPanel = () => {
                   </select>
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                   <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
@@ -925,34 +923,34 @@ const AdminPanel = () => {
       case 'editCourse':
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-semibold mb-4">Редактировать курс</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-700 max-w-md w-full p-6">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Редактировать курс</h2>
               <form onSubmit={handleUpdateCourse} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Название</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Название</label>
                   <input
                     type="text"
                     value={editCourseTitle}
                     onChange={(e) => setEditCourseTitle(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Описание</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Описание</label>
                   <textarea
                     value={editCourseDescription}
                     onChange={(e) => setEditCourseDescription(e.target.value)}
                     rows={3}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Преподаватель</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Преподаватель</label>
                   <select
                     value={editCourseTeacherId || ''}
                     onChange={(e) => setEditCourseTeacherId(Number(e.target.value))}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   >
                     <option value="">-- Выберите --</option>
@@ -964,7 +962,7 @@ const AdminPanel = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Группы (зажмите Ctrl для множественного выбора)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Группы (зажмите Ctrl для множественного выбора)</label>
                   <select
                     multiple
                     value={editCourseGroupIds.map(String)}
@@ -972,7 +970,7 @@ const AdminPanel = () => {
                       const selected = Array.from(e.target.selectedOptions, (opt) => Number(opt.value));
                       setEditCourseGroupIds(selected);
                     }}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                   >
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>
@@ -982,7 +980,7 @@ const AdminPanel = () => {
                   </select>
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={closeModal} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                   <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -1005,11 +1003,11 @@ const AdminPanel = () => {
   }
 
   return (
-    <div>
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       {message && (
         <div
           className={`p-3 mb-4 rounded ${
-            message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            message.includes('✅') ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
           }`}
         >
           {message}
@@ -1017,10 +1015,10 @@ const AdminPanel = () => {
       )}
 
       {/* Вкладки */}
-      <div className="flex space-x-4 border-b mb-6 overflow-x-auto">
+      <div className="flex space-x-4 border-b dark:border-gray-700 mb-6 overflow-x-auto">
         <button
           className={`py-2 px-4 font-medium whitespace-nowrap ${
-            activeTab === 'groups' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'
+            activeTab === 'groups' ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
           }`}
           onClick={() => setActiveTab('groups')}
         >
@@ -1028,7 +1026,7 @@ const AdminPanel = () => {
         </button>
         <button
           className={`py-2 px-4 font-medium whitespace-nowrap ${
-            activeTab === 'students' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'
+            activeTab === 'students' ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
           }`}
           onClick={() => setActiveTab('students')}
         >
@@ -1036,7 +1034,7 @@ const AdminPanel = () => {
         </button>
         <button
           className={`py-2 px-4 font-medium whitespace-nowrap ${
-            activeTab === 'teachers' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'
+            activeTab === 'teachers' ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
           }`}
           onClick={() => setActiveTab('teachers')}
         >
@@ -1044,7 +1042,7 @@ const AdminPanel = () => {
         </button>
         <button
           className={`py-2 px-4 font-medium whitespace-nowrap ${
-            activeTab === 'courses' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'
+            activeTab === 'courses' ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
           }`}
           onClick={() => setActiveTab('courses')}
         >
@@ -1052,7 +1050,7 @@ const AdminPanel = () => {
         </button>
         <button
           className={`py-2 px-4 font-medium whitespace-nowrap ${
-            activeTab === 'news' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'
+            activeTab === 'news' ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
           }`}
           onClick={() => setActiveTab('news')}
         >
@@ -1060,7 +1058,7 @@ const AdminPanel = () => {
         </button>
         <button
           className={`py-2 px-4 font-medium whitespace-nowrap ${
-            activeTab === 'bugbounty' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'
+            activeTab === 'bugbounty' ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
           }`}
           onClick={() => setActiveTab('bugbounty')}
         >
@@ -1072,7 +1070,7 @@ const AdminPanel = () => {
       {activeTab === 'groups' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Управление группами</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Управление группами</h2>
             <button
               onClick={() => {
                 setGroupName('');
@@ -1087,19 +1085,19 @@ const AdminPanel = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-12">Загрузка...</div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>
           ) : groups.length === 0 ? (
-            <p className="text-gray-500">Группы не найдены</p>
+            <p className="text-gray-500 dark:text-gray-400">Группы не найдены</p>
           ) : (
             <div className="space-y-6">
               {groups.map((group) => (
-                <div key={group.id} className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                <div key={group.id} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 overflow-hidden">
+                  <div className="px-6 py-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
                     <div>
-                      <h3 className="text-lg font-semibold">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                         {group.name} ({group.prefix}) – {group.year} год
                       </h3>
-                      <span className="text-sm text-gray-500">Студентов: {(group.students || []).length}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Студентов: {(group.students || []).length}</span>
                     </div>
                     <div className="space-x-2">
                       <button
@@ -1123,26 +1121,26 @@ const AdminPanel = () => {
                     </div>
                   </div>
                   {(group.students || []).length > 0 ? (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">№</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ФИО</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Логин</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {(group.students || []).map((student) => (
                           <tr key={student.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.studentNumber}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.fullName}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.username || '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{student.studentNumber}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{student.fullName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{student.username || '-'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   ) : (
-                    <div className="px-6 py-4 text-gray-500">В группе нет студентов</div>
+                    <div className="px-6 py-4 text-gray-500 dark:text-gray-400">В группе нет студентов</div>
                   )}
                 </div>
               ))}
@@ -1155,13 +1153,13 @@ const AdminPanel = () => {
       {activeTab === 'students' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Студенты</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Студенты</h2>
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Группа:</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Группа:</label>
               <select
                 value={filterGroupId}
                 onChange={(e) => setFilterGroupId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                className="border rounded px-3 py-2"
+                className="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
               >
                 <option value="all">Все</option>
                 {groups.map((g) => (
@@ -1174,29 +1172,29 @@ const AdminPanel = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-12">Загрузка...</div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>
           ) : filteredStudents.length === 0 ? (
-            <p className="text-gray-500">Студенты не найдены</p>
+            <p className="text-gray-500 dark:text-gray-400">Студенты не найдены</p>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ФИО</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Логин</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Группа</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Действия</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredStudents.map((student) => {
                     const group = groups.find((g) => g.id === student.groupId);
                     return (
                       <tr key={student.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.fullName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.username || '-'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{group ? group.name : '-'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{student.fullName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{student.username || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{group ? group.name : '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           <button
                             onClick={() => openEditUserModal(student)}
                             className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs mr-1"
@@ -1230,7 +1228,7 @@ const AdminPanel = () => {
       {activeTab === 'teachers' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Преподаватели и администраторы</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Преподаватели и администраторы</h2>
             <button
               onClick={() => {
                 setTeacherUsername('');
@@ -1245,27 +1243,27 @@ const AdminPanel = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-12">Загрузка...</div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>
           ) : sortedTeachers.length === 0 ? (
-            <p className="text-gray-500">Преподаватели не найдены</p>
+            <p className="text-gray-500 dark:text-gray-400">Преподаватели не найдены</p>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Логин</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ФИО</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Логин</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Роль</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Действия</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {sortedTeachers.map((teacher) => (
                     <tr key={teacher.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.fullName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{teacher.username || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.role}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{teacher.fullName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{teacher.username || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{teacher.role}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         <button
                           onClick={() => openEditUserModal(teacher)}
                           className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs mr-1"
@@ -1296,11 +1294,11 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ---------- КУРСЫ (с редактированием) ---------- */}
+      {/* ---------- КУРСЫ ---------- */}
       {activeTab === 'courses' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Управление курсами</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Управление курсами</h2>
             <button
               onClick={() => {
                 setCourseTitle('');
@@ -1316,27 +1314,27 @@ const AdminPanel = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-12">Загрузка...</div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>
           ) : courses.length === 0 ? (
-            <p className="text-gray-500">Курсы не найдены</p>
+            <p className="text-gray-500 dark:text-gray-400">Курсы не найдены</p>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Преподаватель</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Название</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Описание</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Преподаватель</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Действия</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {courses.map((course) => (
                     <tr key={course.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{course.title}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{course.description || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.teacher.fullName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{course.title}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{course.description || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{course.teacher.fullName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         <button
                           onClick={() => openEditCourse(course)}
                           className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs mr-1"
@@ -1363,7 +1361,7 @@ const AdminPanel = () => {
       {activeTab === 'news' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Управление новостями</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Управление новостями</h2>
             <button
               onClick={() => {
                 resetNewsForm();
@@ -1375,57 +1373,59 @@ const AdminPanel = () => {
             </button>
           </div>
 
-          {newsFormSuccess && <div className="bg-green-100 text-green-700 p-3 rounded mb-4">{newsFormSuccess}</div>}
-          {newsFormError && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{newsFormError}</div>}
+          {newsFormSuccess && <div className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 p-3 rounded mb-4">{newsFormSuccess}</div>}
+          {newsFormError && <div className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-3 rounded mb-4">{newsFormError}</div>}
 
           {showNewsForm && (
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
-              <h3 className="text-lg font-semibold mb-4">{editingNewsId ? 'Редактировать новость' : 'Создать новость'}</h3>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">{editingNewsId ? 'Редактировать новость' : 'Создать новость'}</h3>
               <form onSubmit={handleSubmitNews} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium">Название</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Название</label>
                   <input
                     type="text"
                     value={newsTitle}
                     onChange={(e) => setNewsTitle(e.target.value)}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Содержание</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Содержание</label>
                   <textarea
                     value={newsContent}
                     onChange={(e) => setNewsContent(e.target.value)}
                     rows={5}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                     required
                   />
                 </div>
 
                 {/* Drag-and-drop загрузка изображения */}
                 <div>
-                  <label className="block text-sm font-medium">Изображение</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Изображение</label>
                   <div
                     {...getRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
+                      isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+                    }`}
                   >
                     <input {...getInputProps()} />
                     {newsImagePreview ? (
                       <div className="flex flex-col items-center">
                         <img src={newsImagePreview} alt="Preview" className="max-h-48 object-contain mb-2" />
-                        <p className="text-sm text-gray-500">Нажмите или перетащите, чтобы заменить изображение</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Нажмите или перетащите, чтобы заменить изображение</p>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-gray-600">Перетащите изображение сюда или нажмите для выбора</p>
-                        <p className="text-xs text-gray-400 mt-1">Поддерживаются JPG, PNG, GIF, WebP до 5 МБ</p>
+                        <p className="text-gray-600 dark:text-gray-400">Перетащите изображение сюда или нажмите для выбора</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Поддерживаются JPG, PNG, GIF, WebP до 5 МБ</p>
                       </div>
                     )}
                   </div>
                   {uploadingImage && <p className="text-sm text-blue-500 mt-1">Загрузка...</p>}
                   {newsImageUrl && !newsImagePreview && (
-                    <p className="text-sm text-gray-500 mt-1">Текущее изображение: {newsImageUrl}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Текущее изображение: {newsImageUrl}</p>
                   )}
                 </div>
 
@@ -1433,7 +1433,7 @@ const AdminPanel = () => {
                   <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     {editingNewsId ? 'Обновить' : 'Создать'}
                   </button>
-                  <button type="button" onClick={resetNewsForm} className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                  <button type="button" onClick={resetNewsForm} className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
                     Отмена
                   </button>
                 </div>
@@ -1442,30 +1442,30 @@ const AdminPanel = () => {
           )}
 
           {newsLoading ? (
-            <div className="text-center py-8">Загрузка...</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
           ) : newsError ? (
-            <div className="text-red-500 text-center py-8">{newsError}</div>
+            <div className="text-red-500 dark:text-red-400 text-center py-8">{newsError}</div>
           ) : news.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Новостей пока нет</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Новостей пока нет</p>
           ) : (
             <div className="space-y-4">
               {news.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-start">
+                <div key={item.id} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4 flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{item.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-2">{item.content}</p>
+                    <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">{item.title}</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">{item.content}</p>
                     {item.imageUrl && (
                       <img src={item.imageUrl} alt={item.title} className="mt-2 h-24 w-auto object-cover rounded" />
                     )}
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       {item.author.fullName} • {new Date(item.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="flex space-x-2 ml-4">
-                    <button onClick={() => handleEditNews(item)} className="text-blue-600 hover:underline text-sm">
+                    <button onClick={() => handleEditNews(item)} className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
                       Редактировать
                     </button>
-                    <button onClick={() => handleDeleteNews(item.id)} className="text-red-600 hover:underline text-sm">
+                    <button onClick={() => handleDeleteNews(item.id)} className="text-red-600 dark:text-red-400 hover:underline text-sm">
                       Удалить
                     </button>
                   </div>
@@ -1480,31 +1480,33 @@ const AdminPanel = () => {
       {activeTab === 'bugbounty' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Управление отчётами Bug Bounty</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Управление отчётами Bug Bounty</h2>
           </div>
 
           {bugMessage && (
             <div
-              className={`p-3 mb-4 rounded ${bugMessage.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+              className={`p-3 mb-4 rounded ${
+                bugMessage.includes('✅') ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+              }`}
             >
               {bugMessage}
             </div>
           )}
 
           {bugLoading ? (
-            <div className="text-center py-8">Загрузка...</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
           ) : bugError ? (
-            <div className="text-red-500 text-center py-8">{bugError}</div>
+            <div className="text-red-500 dark:text-red-400 text-center py-8">{bugError}</div>
           ) : bugReports.length === 0 ? (
-            <p className="text-gray-500">Нет отчётов</p>
+            <p className="text-gray-500 dark:text-gray-400">Нет отчётов</p>
           ) : (
             <div className="space-y-4">
               {bugReports.map((report) => (
-                <div key={report.id} className="bg-white rounded-lg shadow p-4">
+                <div key={report.id} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <h3 className="font-semibold text-lg">{report.title}</h3>
+                        <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">{report.title}</h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(report.severity)}`}>
                           {report.severity}
                         </span>
@@ -1516,52 +1518,52 @@ const AdminPanel = () => {
                           {report.status === 'CLOSED' && 'Закрыт'}
                         </span>
                       </div>
-                      <p className="text-gray-600 text-sm mt-1">{report.description}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{report.description}</p>
                       {report.steps && (
-                        <p className="text-gray-500 text-sm mt-1">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                           <span className="font-medium">Шаги:</span> {report.steps}
                         </p>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                         Автор: {report.user.fullName} • {new Date(report.createdAt).toLocaleDateString()}
                       </p>
                       {report.adminResponse && (
-                        <div className="mt-2 bg-gray-50 p-2 rounded border-l-4 border-blue-400">
-                          <p className="text-sm font-medium text-gray-700">Ответ:</p>
-                          <p className="text-sm text-gray-600">{report.adminResponse}</p>
+                        <div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded border-l-4 border-blue-400 dark:border-blue-500">
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Ответ:</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{report.adminResponse}</p>
                           {report.responder && (
-                            <p className="text-xs text-gray-400 mt-1">Ответил: {report.responder.fullName}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Ответил: {report.responder.fullName}</p>
                           )}
                         </div>
                       )}
                     </div>
                     <div className="flex space-x-2 ml-4">
                       {!report.adminResponse && (
-                        <button onClick={() => setRespondingId(report.id)} className="text-blue-600 hover:underline text-sm">
+                        <button onClick={() => setRespondingId(report.id)} className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
                           Ответить
                         </button>
                       )}
-                      <button onClick={() => handleDeleteBugReport(report.id)} className="text-red-600 hover:underline text-sm">
+                      <button onClick={() => handleDeleteBugReport(report.id)} className="text-red-600 dark:text-red-400 hover:underline text-sm">
                         Удалить
                       </button>
                     </div>
                   </div>
 
                   {respondingId === report.id && (
-                    <div className="mt-4 border-t pt-4">
+                    <div className="mt-4 border-t dark:border-gray-700 pt-4">
                       <div className="space-y-3">
                         <textarea
                           placeholder="Ваш ответ..."
                           value={responseText}
                           onChange={(e) => setResponseText(e.target.value)}
                           rows={3}
-                          className="w-full border rounded px-3 py-2"
+                          className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                         />
                         <div className="flex items-center space-x-4">
                           <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
-                            className="border rounded px-3 py-2"
+                            className="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                           >
                             <option value="IN_PROGRESS">В работе</option>
                             <option value="RESOLVED">Решён</option>
@@ -1574,7 +1576,7 @@ const AdminPanel = () => {
                           >
                             Отправить ответ
                           </button>
-                          <button onClick={() => setRespondingId(null)} className="text-gray-500 hover:underline">
+                          <button onClick={() => setRespondingId(null)} className="text-gray-500 dark:text-gray-400 hover:underline">
                             Отмена
                           </button>
                         </div>

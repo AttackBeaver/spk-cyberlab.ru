@@ -4,41 +4,69 @@ const Contacts = () => {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Контакты</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Контакты</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Адрес</h2>
-            <p className="text-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Адрес</h2>
+            <p className="text-gray-700 dark:text-gray-300">
               БПОУ ОО «Сибирский профессиональный колледж»<br />
               644005, Омская область, г. Омск, ул. Добролюбова, 15
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Контакты</h2>
-            <p className="text-gray-700">
-              <span className="font-medium">Сайт:</span> <a href="https://spk-55.ru/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">spk-55.ru</a><br />
-              <span className="font-medium">Разработчик:</span> <a href="https://t.me/attack_beaver" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">@attack_beaver</a><br />           
-              <span className="font-medium">GitHub:</span> <a href="https://github.com/AttackBeaver/spk-cyberlab.ru" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">AttackBeaver/spk-cyberlab.ru</a>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Контакты</h2>
+            <p className="text-gray-700 dark:text-gray-300">
+              <span className="font-medium">Сайт:</span>{' '}
+              <a
+                href="https://spk-55.ru/"
+                className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                spk-55.ru
+              </a>
+              <br />
+              <span className="font-medium">Разработчик:</span>{' '}
+              <a
+                href="https://t.me/attack_beaver"
+                className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @attack_beaver
+              </a>
+              <br />
+              <span className="font-medium">GitHub:</span>{' '}
+              <a
+                href="https://github.com/AttackBeaver/spk-cyberlab.ru"
+                className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                AttackBeaver/spk-cyberlab.ru
+              </a>
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Разработчик платформы</h2>
-            <p className="text-gray-700">
-              <span className="font-medium">Стариков Александр Владимирович,</span><br />
-              Преподаватель<br />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Разработчик платформы</h2>
+            <p className="text-gray-700 dark:text-gray-300">
+              <span className="font-medium">Стариков Александр Владимирович,</span>
+              <br />
+              Преподаватель
+              <br />
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Режим работы колледжа</h2>
-            <p className="text-gray-700">
-            Понедельник - Пятница с 8:00 до 19:00<br />
-            Суббота с 8:00 до 15:30<br />
-            Воскресенье - выходной
-          </p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Режим работы колледжа</h2>
+            <p className="text-gray-700 dark:text-gray-300">
+              Понедельник - Пятница с 8:00 до 19:00<br />
+              Суббота с 8:00 до 15:30<br />
+              Воскресенье - выходной
+            </p>
           </div>
         </div>
       </div>

@@ -4,36 +4,36 @@ const Privacy = () => {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Политика конфиденциальности</h1>
-        <div className="bg-white rounded-lg shadow p-6 space-y-4 text-gray-700">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Политика конфиденциальности</h1>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 space-y-4 text-gray-700 dark:text-gray-300 transition-colors duration-300">
           <p>
             Настоящая Политика конфиденциальности описывает, как платформа SPK CyberLab собирает, использует и защищает личную информацию пользователей.
           </p>
-          <h2 className="text-xl font-semibold">1. Сбор информации</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">1. Сбор информации</h2>
           <p>
             Мы собираем информацию, которую вы предоставляете при регистрации: ФИО, номер группы, а также данные о выполненных заданиях и активности на платформе.
           </p>
-          <h2 className="text-xl font-semibold">2. Использование информации</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">2. Использование информации</h2>
           <p>
             Информация используется для предоставления доступа к образовательным материалам, отслеживания прогресса, выдачи достижений и улучшения работы платформы.
           </p>
-          <h2 className="text-xl font-semibold">3. Защита информации</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">3. Защита информации</h2>
           <p>
             Мы принимаем разумные меры для защиты ваших данных от несанкционированного доступа, изменения или уничтожения. Пароли хранятся в зашифрованном виде.
           </p>
-          <h2 className="text-xl font-semibold">4. Передача третьим лицам</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">4. Передача третьим лицам</h2>
           <p>
             Мы не передаём ваши личные данные третьим лицам, за исключением случаев, предусмотренных законодательством.
           </p>
-          <h2 className="text-xl font-semibold">5. Файлы cookie</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">5. Файлы cookie</h2>
           <p>
             Платформа использует файлы cookie для обеспечения работы авторизации и улучшения пользовательского опыта. Вы можете отключить cookie в настройках браузера.
           </p>
-          <h2 className="text-xl font-semibold">6. Изменения политики</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">6. Изменения политики</h2>
           <p>
             Мы оставляем за собой право вносить изменения в данную политику. Обновлённая версия публикуется на этой странице.
           </p>
-          <p className="text-sm text-gray-500 mt-4">Дата последнего обновления: 01 сентября 2026 г.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">Дата последнего обновления: 01 сентября 2026 г.</p>
         </div>
       </div>
     </Layout>

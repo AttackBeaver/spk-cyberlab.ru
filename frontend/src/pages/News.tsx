@@ -39,19 +39,19 @@ const News = () => {
     setSelectedImage(null);
   };
 
-  if (loading) return <Layout><div className="text-center py-8">Загрузка...</div></Layout>;
-  if (error) return <Layout><div className="text-red-500 text-center py-8">{error}</div></Layout>;
+  if (loading) return <Layout><div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div></Layout>;
+  if (error) return <Layout><div className="text-red-500 dark:text-red-400 text-center py-8">{error}</div></Layout>;
 
   return (
     <Layout>
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Новости</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Новости</h1>
         <div className="space-y-6">
           {news.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Пока нет новостей</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Пока нет новостей</p>
           ) : (
             news.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+              <div key={item.id} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 hover:shadow-lg transition">
                 {item.imageUrl && (
                   <div
                     className="w-full overflow-hidden rounded-md mb-4 cursor-pointer"
@@ -64,9 +64,9 @@ const News = () => {
                     />
                   </div>
                 )}
-                <h2 className="text-2xl font-semibold mb-2">{item.title}</h2>
-                <p className="text-gray-700 mb-4">{item.content}</p>
-                <div className="text-sm text-gray-500">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">{item.title}</h2>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">{item.content}</p>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   <span>Автор: {item.author.fullName}</span>
                   <span className="mx-2">•</span>
                   <span>{new Date(item.createdAt).toLocaleDateString()}</span>
@@ -89,7 +89,7 @@ const News = () => {
           >
             <button
               onClick={closeImage}
-              className="absolute top-2 right-2 text-white text-3xl hover:text-gray-300 z-10"
+              className="absolute top-2 right-2 text-white text-3xl hover:text-gray-300 z-10 transition"
             >
               ×
             </button>

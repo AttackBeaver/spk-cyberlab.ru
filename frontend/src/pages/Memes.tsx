@@ -227,12 +227,12 @@ const Memes = () => {
     <Layout>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-          <h1 className="text-2xl font-bold">Мемная</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Мемная</h1>
           <div className="flex items-center space-x-2">
             {user && (
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded transition"
               >
                 {showForm ? 'Отмена' : '+ Предложить мем'}
               </button>
@@ -243,7 +243,7 @@ const Memes = () => {
                   setShowModeration(!showModeration);
                   if (!showModeration) fetchPending();
                 }}
-                className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+                className="bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white px-4 py-2 rounded transition"
               >
                 {showModeration ? 'Скрыть модерацию' : 'Модерация'}
               </button>
@@ -251,13 +251,13 @@ const Memes = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 mb-6 items-end bg-white p-4 rounded-lg shadow">
+        <div className="flex flex-wrap gap-4 mb-6 items-end bg-white dark:bg-gray-800 p-4 rounded-lg shadow dark:shadow-gray-700">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Категория</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Категория</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="ALL">Все</option>
               <option value="PHOTO">Фото</option>
@@ -266,21 +266,21 @@ const Memes = () => {
             </select>
           </div>
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700">Поиск</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Поиск</label>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Название или автор"
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Сортировка</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Сортировка</label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="date">По дате (свежие)</option>
               <option value="popular">По популярности</option>
@@ -288,34 +288,36 @@ const Memes = () => {
           </div>
           <button
             onClick={() => { setCategory('ALL'); setSearch(''); setSort('date'); }}
-            className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+            className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded transition"
           >
             Сбросить
           </button>
         </div>
 
         {message && (
-          <div className={`p-3 mb-4 rounded ${message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <div className={`p-3 mb-4 rounded ${message.includes('✅') ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             {message}
           </div>
         )}
 
         {showForm && user && (
-          <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 className="text-xl font-semibold mb-4">Предложить мем</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700 mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Предложить мем</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
                 placeholder="Название"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
-                  isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
+                  isDragActive
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
                 <input {...getInputProps()} />
@@ -326,19 +328,19 @@ const Memes = () => {
                     ) : (
                       <img src={preview} alt="Preview" className="max-h-48 object-contain" />
                     )}
-                    <p className="text-sm text-gray-500 mt-2">Нажмите или перетащите, чтобы заменить файл</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Нажмите или перетащите, чтобы заменить файл</p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-gray-600">Перетащите файл сюда или нажмите для выбора</p>
-                    <p className="text-xs text-gray-400 mt-1">Поддерживаются изображения (JPG, PNG, GIF) и видео (MP4, WebM, OGG, AVI, MOV) до 10 МБ</p>
+                    <p className="text-gray-600 dark:text-gray-400">Перетащите файл сюда или нажмите для выбора</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Поддерживаются изображения (JPG, PNG, GIF) и видео (MP4, WebM, OGG, AVI, MOV) до 10 МБ</p>
                   </div>
                 )}
               </div>
               <button
                 type="submit"
                 disabled={uploading || !file}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+                className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50 transition"
               >
                 {uploading ? 'Загрузка...' : 'Отправить'}
               </button>
@@ -347,18 +349,18 @@ const Memes = () => {
         )}
 
         {showModeration && user?.role === 'ADMIN' && (
-          <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 className="text-xl font-semibold mb-4">Модерация мемов</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700 mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Модерация мемов</h2>
             {pendingMemes.length === 0 ? (
-              <p className="text-gray-500">Нет мемов на модерацию</p>
+              <p className="text-gray-500 dark:text-gray-400">Нет мемов на модерацию</p>
             ) : (
               <div className="space-y-4">
                 {pendingMemes.map((meme) => (
-                  <div key={meme.id} className="border p-4 rounded flex justify-between items-start">
+                  <div key={meme.id} className="border dark:border-gray-700 p-4 rounded flex justify-between items-start flex-wrap gap-2">
                     <div>
-                      <h3 className="font-semibold">{meme.title}</h3>
-                      <p className="text-sm text-gray-500">Автор: {meme.author.fullName}</p>
-                      <p className="text-sm text-gray-500">Категория: {meme.category || 'Без категории'}</p>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-200">{meme.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Автор: {meme.author.fullName}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Категория: {meme.category || 'Без категории'}</p>
                       {isVideo(meme.imageUrl) ? (
                         <video src={meme.imageUrl} className="h-24 w-auto object-cover mt-2" controls />
                       ) : (
@@ -366,8 +368,8 @@ const Memes = () => {
                       )}
                     </div>
                     <div className="space-x-2">
-                      <button onClick={() => handleApprove(meme.id)} className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Одобрить</button>
-                      <button onClick={() => handleReject(meme.id)} className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Отклонить</button>
+                      <button onClick={() => handleApprove(meme.id)} className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-3 py-1 rounded transition">Одобрить</button>
+                      <button onClick={() => handleReject(meme.id)} className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white px-3 py-1 rounded transition">Отклонить</button>
                     </div>
                   </div>
                 ))}
@@ -376,11 +378,11 @@ const Memes = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <h2 className="text-lg font-semibold mb-2">Топ авторов мемов</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Топ авторов мемов</h2>
           <div className="flex flex-wrap gap-2">
             {authorRanking.slice(0, 10).map((author, idx) => (
-              <span key={author.id} className="bg-gray-100 px-3 py-1 rounded-full text-sm">
+              <span key={author.id} className="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-700 dark:text-gray-300">
                 {idx+1}. {author.fullName} ({author._count.memes} мемов)
               </span>
             ))}
@@ -388,21 +390,21 @@ const Memes = () => {
         </div>
 
         {loading ? (
-          <div className="text-center py-8">Загрузка...</div>
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
         ) : error ? (
-          <div className="text-red-500 text-center py-8">{error}</div>
+          <div className="text-red-500 dark:text-red-400 text-center py-8">{error}</div>
         ) : memes.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">По вашему запросу ничего не найдено</p>
+          <p className="text-gray-500 dark:text-gray-400 text-center py-8">По вашему запросу ничего не найдено</p>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {memes.map((meme) => (
                 <div
                   key={meme.id}
-                  className="bg-white rounded-lg shadow overflow-hidden hover:shadow-xl transition flex flex-col cursor-pointer"
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 overflow-hidden hover:shadow-xl transition flex flex-col cursor-pointer"
                   onClick={() => handleOpenMeme(meme)}
                 >
-                  <div className="h-48 bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                  <div className="h-48 bg-gray-100 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center">
                     {isVideo(meme.imageUrl) ? (
                       <video
                         src={meme.imageUrl}
@@ -419,19 +421,19 @@ const Memes = () => {
                     )}
                   </div>
                   <div className="p-3 flex flex-col flex-1">
-                    <h3 className="font-semibold text-sm truncate">{meme.title}</h3>
-                    <p className="text-xs text-gray-500">Автор: {meme.author.fullName}</p>
-                    <p className="text-xs text-gray-400">Категория: {meme.category}</p>
+                    <h3 className="font-semibold text-sm truncate text-gray-800 dark:text-gray-200">{meme.title}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Автор: {meme.author.fullName}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Категория: {meme.category}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleVote(meme.id, 'LIKE'); }}
-                        className="text-red-500 hover:text-red-700 text-sm"
+                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm transition"
                       >
                         ❤️ {meme.likes}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleVote(meme.id, 'DISLIKE'); }}
-                        className="text-gray-500 hover:text-gray-700 text-sm"
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-sm transition"
                       >
                         👎 {meme.dislikes}
                       </button>
@@ -439,7 +441,7 @@ const Memes = () => {
                     {user?.role === 'ADMIN' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(meme.id); }}
-                        className="mt-2 text-red-600 hover:underline text-xs self-start"
+                        className="mt-2 text-red-600 hover:underline dark:text-red-400 dark:hover:text-red-300 text-xs self-start"
                       >
                         Удалить
                       </button>
@@ -454,10 +456,10 @@ const Memes = () => {
                   <button
                     key={p}
                     onClick={() => fetchMemes(p + 1)}
-                    className={`px-4 py-2 rounded ${
+                    className={`px-4 py-2 rounded transition ${
                       currentPage === p + 1
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
                     {p + 1}
@@ -476,14 +478,14 @@ const Memes = () => {
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto"
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-full overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 flex justify-between items-center border-b">
-              <h2 className="text-xl font-semibold">{selectedMeme.title}</h2>
+            <div className="p-4 flex justify-between items-center border-b dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{selectedMeme.title}</h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl transition"
               >
                 ×
               </button>
@@ -500,7 +502,7 @@ const Memes = () => {
                 <img src={selectedMeme.imageUrl} alt={selectedMeme.title} className="max-w-full max-h-[80vh]" />
               )}
             </div>
-            <div className="p-4 border-t text-sm text-gray-500">
+            <div className="p-4 border-t dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
               <p>Автор: {selectedMeme.author.fullName}</p>
               <p>Категория: {selectedMeme.category}</p>
               <p>Дата: {new Date(selectedMeme.createdAt).toLocaleDateString()}</p>

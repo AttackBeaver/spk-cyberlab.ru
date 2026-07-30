@@ -114,45 +114,53 @@ const TeacherSandboxTemplateCreator = () => {
   };
 
   if (!user || user.role !== 'ADMIN') {
-    return <Layout><div className="text-red-500">Доступ запрещён. Только для администратора.</div></Layout>;
+    return <Layout><div className="text-red-500 dark:text-red-400">Доступ запрещён. Только для администратора.</div></Layout>;
   }
 
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
             {templateId ? 'Редактировать шаблон' : 'Создать шаблон'}
           </h1>
           <button
             onClick={() => navigate('/teacher/sandbox')}
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
           >
             ← Назад
           </button>
         </div>
 
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
-        {success && <div className="bg-green-100 text-green-700 p-3 rounded mb-4">{success}</div>}
+        {error && (
+          <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-3 rounded mb-4">
+            {success}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700 p-6 space-y-4 transition-colors duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium">Название шаблона</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Название шаблона</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium">Тип задания</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Тип задания</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
                 <option value="SQL_INJECTION">SQL-инъекция</option>
@@ -166,47 +174,47 @@ const TeacherSandboxTemplateCreator = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Описание шаблона</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Описание шаблона</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Схема конфигурации (JSON) — описывает структуру настраиваемых параметров</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Схема конфигурации (JSON) — описывает структуру настраиваемых параметров</label>
             <textarea
               value={configSchema}
               onChange={(e) => setConfigSchema(e.target.value)}
               rows={4}
-              className="w-full border rounded px-3 py-2 font-mono text-sm"
+              className="w-full border rounded px-3 py-2 font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               placeholder='{"schema": "string", "data": "object"}'
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Конфигурация по умолчанию (JSON)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Конфигурация по умолчанию (JSON)</label>
             <textarea
               value={defaultConfig}
               onChange={(e) => setDefaultConfig(e.target.value)}
               rows={4}
-              className="w-full border rounded px-3 py-2 font-mono text-sm"
+              className="w-full border rounded px-3 py-2 font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               placeholder='{"schema": "CREATE TABLE users...", "data": {"users": [...]}}'
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">HTML-макет для предпросмотра (необязательно)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">HTML-макет для предпросмотра (необязательно)</label>
             <textarea
               value={previewHtml}
               onChange={(e) => setPreviewHtml(e.target.value)}
               rows={6}
-              className="w-full border rounded px-3 py-2 font-mono text-sm"
+              className="w-full border rounded px-3 py-2 font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               placeholder="<div>Пример макета уязвимого сайта...</div>"
             />
           </div>
@@ -215,14 +223,14 @@ const TeacherSandboxTemplateCreator = () => {
             <button
               type="submit"
               disabled={loading}
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+              className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-6 py-2 rounded disabled:opacity-50 transition"
             >
               {loading ? 'Сохранение...' : templateId ? 'Обновить' : 'Создать'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/teacher/sandbox')}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 px-4 py-2 rounded transition"
             >
               Отмена
             </button>
