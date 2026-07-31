@@ -1,7 +1,7 @@
 # SPK CyberLab — Образовательная платформа
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.2.1-blue.svg)](https://github.com/AttackBeaver/spk-cyberlab.ru)
+[![Version](https://img.shields.io/badge/version-1.2.6-blue.svg)](https://github.com/AttackBeaver/spk-cyberlab.ru)
 
 SPK CyberLab — это интерактивная образовательная среда для изучения и развития практических навыков в IT. Разработана для студентов и преподавателей БПОУ ОО «Сибирский профессиональный колледж».
 
