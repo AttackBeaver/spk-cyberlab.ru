@@ -53,7 +53,7 @@ export const addStudents = async (req: Request, res: Response) => {
 
 // Создание преподавателя (только ADMIN)
 export const createTeacher = async (req: Request, res: Response) => {
-  const { username, fullName, password } = req.body; // email удалён
+  const { username, fullName, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const teacher = await prisma.user.create({
@@ -78,7 +78,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 
   const user = await prisma.user.findFirst({
-    where: { username }, // поиск только по логину
+    where: { username },
   });
 
   if (!user) {
@@ -110,7 +110,7 @@ export const getAllGroups = async (req: Request, res: Response) => {
   const groups = await prisma.group.findMany({
     include: {
       students: {
-        select: { id: true, fullName: true, studentNumber: true, username: true }, // email удалён
+        select: { id: true, fullName: true, studentNumber: true, username: true },
       },
     },
     orderBy: { name: 'asc' },
@@ -122,14 +122,14 @@ export const getAllGroups = async (req: Request, res: Response) => {
 export const getAllCourses = async (req: Request, res: Response) => {
   const courses = await prisma.course.findMany({
     include: {
-      teacher: { select: { id: true, fullName: true } }, // email удалён
+      teacher: { select: { id: true, fullName: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
   res.json(courses);
 };
 
-// Удаление пользователя (только ADMIN)
+// Удаление пользователя (только ADMIN) – ОБНОВЛЁННАЯ ВЕРСИЯ
 export const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const currentUserId = (req as any).user.id;
@@ -138,13 +138,46 @@ export const deleteUser = async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Нельзя удалить самого себя' });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: Number(id) } });
-  if (!user) {
-    return res.status(404).json({ error: 'Пользователь не найден' });
-  }
+  const userId = Number(id);
 
-  await prisma.user.delete({ where: { id: Number(id) } });
-  res.status(204).send();
+  try {
+    // Используем транзакцию для удаления всех зависимостей
+    await prisma.$transaction(async (tx) => {
+      // 1. Удаляем записи с обязательной связью (если они существуют)
+      await tx.taskAttempt.deleteMany({ where: { userId } });
+      await tx.meme.deleteMany({ where: { authorId: userId } });
+      await tx.userAchievement.deleteMany({ where: { userId } });
+      await tx.memeVote.deleteMany({ where: { userId } });
+      await tx.sandboxAttempt.deleteMany({ where: { userId } });
+      await tx.sandboxSession.deleteMany({ where: { userId } });
+      await tx.sandboxTask.deleteMany({ where: { createdBy: userId } });
+      await tx.news.deleteMany({ where: { authorId: userId } });
+      await tx.bugReport.deleteMany({ where: { userId } });
+      await tx.log.deleteMany({ where: { userId } });
+
+      // 2. Для опциональных связей устанавливаем null вместо удаления
+      await tx.bugReport.updateMany({
+        where: { respondedBy: userId },
+        data: { respondedBy: null, adminResponse: null, respondedAt: null },
+      });
+      await tx.sandboxStudentReport.updateMany({
+        where: { reviewedBy: userId },
+        data: { reviewedBy: null, reviewedAt: null },
+      });
+
+      // 3. Удаляем курсы, созданные пользователем (если он преподаватель/админ)
+      //    Если хотите сохранить курсы, закомментируйте эту строку и обработайте иначе
+      await tx.course.deleteMany({ where: { teacherId: userId } });
+
+      // 4. Удаляем самого пользователя
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Ошибка удаления пользователя:', error);
+    res.status(500).json({ error: 'Не удалось удалить пользователя' });
+  }
 };
 
 // Удаление группы (только ADMIN)
@@ -169,10 +202,10 @@ export const deleteGroup = async (req: Request, res: Response) => {
   res.status(204).send();
 };
 
-// Редактирование пользователя (только ADMIN) – email удалён
+// Редактирование пользователя (только ADMIN)
 export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { username, fullName } = req.body; // email удалён
+  const { username, fullName } = req.body;
 
   const user = await prisma.user.findUnique({
     where: { id: Number(id) },

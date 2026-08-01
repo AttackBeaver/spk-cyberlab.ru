@@ -14,13 +14,7 @@ import About from './pages/About';
 import Contacts from './pages/Contacts';
 import FAQ from './pages/FAQ';
 import News from './pages/News';
-import Directions from './pages/Directions';
 import NotFound from './pages/NotFound';
-import Practicums from './pages/Practicums';
-import Labs from './pages/Labs';
-import Testing from './pages/Testing';
-import VirtualLabs from './pages/VirtualLabs';
-import Knowledge from './pages/Knowledge';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import ServerError from './pages/ServerError';
@@ -65,13 +59,7 @@ function App() {
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/news" element={<News />} />
-        <Route path="/directions" element={<Directions />} />
         <Route path="*" element={<NotFound />} />
-        <Route path="/practicums" element={<Practicums />} />
-        <Route path="/labs" element={<Labs />} />
-        <Route path="/testing" element={<Testing />} />
-        <Route path="/virtual-labs" element={<VirtualLabs />} />
-        <Route path="/knowledge" element={<Knowledge />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/500" element={<ServerError />} />

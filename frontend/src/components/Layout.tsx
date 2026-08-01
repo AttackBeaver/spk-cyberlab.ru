@@ -1,11 +1,21 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme, type Theme } from '../hooks/useTheme';
 import {
   SunIcon,
   MoonIcon,
   ComputerDesktopIcon,
+  HomeIcon,
+  BookOpenIcon,
+  CubeIcon,
+  FaceSmileIcon,
+  ShieldCheckIcon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+  UserPlusIcon,
+  Cog6ToothIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 
 interface LayoutProps {
@@ -18,6 +28,17 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
   const { theme, setTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+
+  // Эффект для изменения стиля шапки при скролле
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -54,238 +75,515 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
     setTheme(themes[nextIndex]);
   };
 
+  // Определяем активную ссылку для подсветки
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       {/* Шапка */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-10 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="Логотип SPK CyberLab" className="h-8 w-auto" />
-            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">SPK CyberLab</span>
-          </Link>
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-lg'
+            : 'bg-white/60 dark:bg-gray-900/60 backdrop-blur-md shadow-sm'
+        } border-b border-gray-200/50 dark:border-gray-700/50`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Логотип */}
+            <Link to="/" className="flex items-center space-x-2 group">
+              <img
+                src="/logo.png"
+                alt="SPK CyberLab"
+                className="h-9 w-auto transition-transform group-hover:scale-105"
+              />
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                SPK CyberLab
+              </span>
+            </Link>
 
-          {/* Основное меню (десктоп и планшет) */}
-          <nav className="hidden md:flex items-center space-x-4 text-sm">
-            <Link to="/" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">Главная</Link>
-            <Link to="/courses" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">Курсы</Link>
-
-            <div className="hidden lg:flex items-center space-x-4">
-              <Link to="/directions" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">Направления</Link>
-              <Link to="/sandbox" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">Полигон</Link>
-              <Link to="/memes" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">Мемы</Link>
-              <Link to="/bug-bounty" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">Bug Bounty</Link>
-            </div>
-
-            <div className="relative hidden md:block lg:hidden">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center whitespace-nowrap"
+            {/* Десктопное меню */}
+            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+              <Link
+                to="/"
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isActive('/')
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
               >
-                Ещё
-                <svg
-                  className={`ml-1 w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 border dark:border-gray-700 z-20">
-                  <Link
-                    to="/directions"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Направления
-                  </Link>
-                  <Link
-                    to="/sandbox"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Полигон
-                  </Link>
-                  <Link
-                    to="/memes"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Мемы
-                  </Link>
-                  <Link
-                    to="/bug-bounty"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Bug Bounty
-                  </Link>
-                </div>
-              )}
-            </div>
+                <span className="flex items-center gap-1.5">
+                  <HomeIcon className="w-4 h-4" />
+                  Главная
+                </span>
+              </Link>
+              <Link
+                to="/courses"
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isActive('/courses')
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <BookOpenIcon className="w-4 h-4" />
+                  Курсы
+                </span>
+              </Link>
 
-            {user ? (
-              <div className="relative group">
-                <Link to="/profile" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer whitespace-nowrap">
-                  Личный кабинет
+              {/* Ссылки для больших экранов */}
+              <div className="hidden lg:flex items-center space-x-1">
+                <Link
+                  to="/sandbox"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive('/sandbox')
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <CubeIcon className="w-4 h-4" />
+                    Полигон
+                  </span>
+                </Link>
+                <Link
+                  to="/memes"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive('/memes')
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <FaceSmileIcon className="w-4 h-4" />
+                    Мемы
+                  </span>
+                </Link>
+                <Link
+                  to="/bug-bounty"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive('/bug-bounty')
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    Bug Bounty
+                  </span>
                 </Link>
               </div>
-            ) : (
-              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">Вход</Link>
-            )}
 
-            {user?.role === 'TEACHER' && (
-              <Link to="/teacher/courses" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">
-                Панель преподавателя
-              </Link>
-            )}
-            {user?.role === 'ADMIN' && (
-              <Link to="/admin" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap">
-                Админ-панель
-              </Link>
-            )}
-          </nav>
+              {/* Выпадающее меню "Ещё" для средних экранов */}
+              <div className="relative hidden md:block lg:hidden">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
+                    isDropdownOpen
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70'
+                  }`}
+                >
+                  Ещё
+                  <svg
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      isDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 py-1 z-20 animate-fadeIn">
+                    <Link
+                      to="/sandbox"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-700/70"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <CubeIcon className="w-4 h-4" />
+                      Полигон
+                    </Link>
+                    <Link
+                      to="/memes"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-700/70"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <FaceSmileIcon className="w-4 h-4" />
+                      Мемы
+                    </Link>
+                    <Link
+                      to="/bug-bounty"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-700/70"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <ShieldCheckIcon className="w-4 h-4" />
+                      Bug Bounty
+                    </Link>
+                  </div>
+                )}
+              </div>
 
-          <div className="flex items-center space-x-3">
-            {/* Кнопка переключения темы */}
-            <button
-              onClick={cycleTheme}
-              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title={`Тема: ${getThemeLabel()}`}
-            >
-              {getThemeIcon()}
-            </button>
+              {/* Профиль / Вход */}
+              <div className="flex items-center space-x-2">
+                {user ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        isActive('/profile')
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <UserCircleIcon className="w-4 h-4" />
+                        Профиль
+                      </span>
+                    </Link>
+                    {/* Ролевые ссылки */}
+                    {user.role === 'TEACHER' && (
+                      <Link
+                        to="/teacher/courses"
+                        className="px-3 py-2 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800/40 transition-all"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <AcademicCapIcon className="w-4 h-4" />
+                          Преподаватель
+                        </span>
+                      </Link>
+                    )}
+                    {user.role === 'ADMIN' && (
+                      <Link
+                        to="/admin"
+                        className="px-3 py-2 rounded-lg text-sm font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-800/40 transition-all"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Cog6ToothIcon className="w-4 h-4" />
+                          Админ
+                        </span>
+                      </Link>
+                    )}
+                    {!hideAuth && (
+                      <button
+                        onClick={handleLogout}
+                        className="px-3 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                          Выйти
+                        </span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                        Вход
+                      </span>
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <UserPlusIcon className="w-4 h-4" />
+                        Регистрация
+                      </span>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </nav>
 
-            {!hideAuth && user && (
+            {/* Правая часть: тема + мобильное меню */}
+            <div className="flex items-center gap-3">
               <button
-                onClick={handleLogout}
-                className="text-red-600 hover:underline text-sm hidden md:inline"
+                onClick={cycleTheme}
+                className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 transition-colors relative group"
+                title={`Тема: ${getThemeLabel()}`}
               >
-                Выйти
+                {getThemeIcon()}
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  {getThemeLabel()}
+                </span>
               </button>
-            )}
-            <button
-              className="md:hidden text-gray-700 dark:text-gray-300"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+
+              <button
+                className="md:hidden p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 transition-colors"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Меню"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        {isMenuOpen && (
-          <div className="md:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-            <nav className="flex flex-col p-4 space-y-2 text-sm">
-              <Link to="/" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Главная</Link>
-              <Link to="/directions" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Направления</Link>
-              <Link to="/courses" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Курсы</Link>
-              <Link to="/sandbox" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Полигон</Link>
-              <Link to="/memes" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Мемы</Link>
-              <Link to="/bug-bounty" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Bug Bounty</Link>
-              {user ? (
-                <>
-                  <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">Личный кабинет</p>
-                    <Link to="/profile" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Профиль</Link>
-                    <Link to="/achievements" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Достижения</Link>
-                    <Link to="/leaderboard" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Рейтинг</Link>
-                  </div>
-                  <button
-                    onClick={() => {
-                      cycleTheme();
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+        {/* Мобильное меню (анимированное) */}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="px-4 py-3 space-y-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50">
+            <Link
+              to="/"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <HomeIcon className="w-5 h-5" />
+              Главная
+            </Link>
+            <Link
+              to="/courses"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <BookOpenIcon className="w-5 h-5" />
+              Курсы
+            </Link>
+            <Link
+              to="/sandbox"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <CubeIcon className="w-5 h-5" />
+              Полигон
+            </Link>
+            <Link
+              to="/memes"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <FaceSmileIcon className="w-5 h-5" />
+              Мемы
+            </Link>
+            <Link
+              to="/bug-bounty"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <ShieldCheckIcon className="w-5 h-5" />
+              Bug Bounty
+            </Link>
+
+            {user ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <UserCircleIcon className="w-5 h-5" />
+                  Профиль
+                </Link>
+                {user.role === 'TEACHER' && (
+                  <Link
+                    to="/teacher/courses"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all"
+                    onClick={() => setIsMenuOpen(false)}
                   >
-                    <span>{getThemeIcon()}</span>
-                    <span>Тема: {getThemeLabel()}</span>
-                  </button>
-                  <button onClick={handleLogout} className="text-red-600 hover:underline text-left">Выйти</button>
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline" onClick={() => setIsMenuOpen(false)}>Вход</Link>
-                  <button
-                    onClick={() => {
-                      cycleTheme();
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                    <AcademicCapIcon className="w-5 h-5" />
+                    Панель преподавателя
+                  </Link>
+                )}
+                {user.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all"
+                    onClick={() => setIsMenuOpen(false)}
                   >
-                    <span>{getThemeIcon()}</span>
-                    <span>Тема: {getThemeLabel()}</span>
-                  </button>
-                </>
-              )}
-              {user?.role === 'TEACHER' && (
-                <Link to="/teacher/courses" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Панель преподавателя</Link>
-              )}
-              {user?.role === 'ADMIN' && (
-                <Link to="/admin" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsMenuOpen(false)}>Админ-панель</Link>
-              )}
-            </nav>
+                    <Cog6ToothIcon className="w-5 h-5" />
+                    Админ-панель
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    cycleTheme();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all w-full"
+                >
+                  {getThemeIcon()}
+                  <span>Тема: {getThemeLabel()}</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all w-full"
+                >
+                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                  Вход
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <UserPlusIcon className="w-5 h-5" />
+                  Регистрация
+                </Link>
+                <button
+                  onClick={() => {
+                    cycleTheme();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all w-full"
+                >
+                  {getThemeIcon()}
+                  <span>Тема: {getThemeLabel()}</span>
+                </button>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
+      {/* Основной контент */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         {children}
       </main>
 
-      <footer className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-sm sm:text-base">
+      {/* Футер */}
+      <footer className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
             <div>
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">О проекте</h3>
-              <ul className="space-y-1 text-xs sm:text-sm">
-                <li><Link to="/about" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">О платформе</Link></li>
-                <li><Link to="/directions" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Направления</Link></li>
-                <li><Link to="/news" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Новости</Link></li>
-                <li><Link to="/contacts" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Контакты</Link></li>
+              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-sm uppercase tracking-wider">
+                О проекте
+              </h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/about" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    О платформе
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/news" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Новости
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contacts" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Контакты
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Обучение</h3>
-              <ul className="space-y-1 text-xs sm:text-sm">
-                <li><Link to="/courses" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Курсы</Link></li>
-                <li><Link to="/practicums" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Практикумы</Link></li>
-                <li><Link to="/labs" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Лабораторные</Link></li>
-                <li><Link to="/testing" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Тестирование</Link></li>
+              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-sm uppercase tracking-wider">
+                Обучение
+              </h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/courses" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Курсы
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Ресурсы</h3>
-              <ul className="space-y-1 text-xs sm:text-sm">
-                <li><Link to="/virtual-labs" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Виртуальные лаборатории</Link></li>
-                <li><Link to="/sandbox" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Полигон</Link></li>
-                <li><Link to="/knowledge" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">База знаний</Link></li>
-                <li><Link to="/memes" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Мемы</Link></li>
-                <li><Link to="/bug-bounty" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Bug Bounty</Link></li>
+              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-sm uppercase tracking-wider">
+                Ресурсы
+              </h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/sandbox" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Полигон
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/memes" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Мемы
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/bug-bounty" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Bug Bounty
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Помощь</h3>
-              <ul className="space-y-1 text-xs sm:text-sm">
-                <li><Link to="/faq" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">FAQ</Link></li>
-                <li><Link to="/privacy" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Политика конфиденциальности</Link></li>
-                <li><Link to="/terms" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Пользовательское соглашение</Link></li>
+              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-sm uppercase tracking-wider">
+                Помощь
+              </h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/faq" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Политика конфиденциальности
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Пользовательское соглашение
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Контакты</h3>
-              <ul className="space-y-1 text-xs sm:text-sm">
-                <li><a href="https://spk-55.ru/" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">spk-55.ru</a></li>
-                <li><a href="https://github.com/AttackBeaver/spk-cyberlab.ru" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">GitHub</a></li>
-                <li className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">644005, Омская область, г. Омск, ул. Добролюбова, 15</li>
+              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-sm uppercase tracking-wider">
+                Контакты
+              </h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="https://spk-55.ru/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    spk-55.ru
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/AttackBeaver/spk-cyberlab.ru"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    GitHub
+                  </a>
+                </li>
+                <li className="text-gray-500 dark:text-gray-500 text-xs">
+                  644005, Омская обл.,<br />г. Омск, ул. Добролюбова, 15
+                </li>
               </ul>
             </div>
           </div>
-          <div className="mt-6 border-t dark:border-gray-700 pt-4 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-8 pt-6 border-t border-gray-200/70 dark:border-gray-700/70 text-center text-sm text-gray-500 dark:text-gray-400">
             <p>© 2026 БПОУ ОО «Сибирский профессиональный колледж». Все права защищены.</p>
-            <p>Разработчик: Стариков А.В.</p>
+            <p className="mt-1">Разработчик: Стариков А.В.</p>
           </div>
         </div>
       </footer>

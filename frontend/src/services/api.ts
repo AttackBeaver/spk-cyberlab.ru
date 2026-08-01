@@ -2,11 +2,8 @@ import axios from 'axios';
 
 console.log('✅ API module loaded');
 
-// Используем переменную окружения, если она задана, иначе – относительный путь /api
-const baseURL = import.meta.env.VITE_API_URL ?? '/api';
-
 const api = axios.create({
-  baseURL,
+  baseURL: '/api',   // <-- всегда используем относительный путь
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
