@@ -11,6 +11,7 @@ import {
   CubeIcon,
   FaceSmileIcon,
   ShieldCheckIcon,
+  KeyIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   UserPlusIcon,
@@ -172,6 +173,20 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                     Bug Bounty
                   </span>
                 </Link>
+                {/* Криптолаборатория */}
+                <Link
+                  to="/cryptolab"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive('/cryptolab')
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <KeyIcon className="w-4 h-4" />
+                    Криптолаба
+                  </span>
+                </Link>
               </div>
 
               {/* Выпадающее меню "Ещё" для средних экранов */}
@@ -221,6 +236,14 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                     >
                       <ShieldCheckIcon className="w-4 h-4" />
                       Bug Bounty
+                    </Link>
+                    <Link
+                      to="/cryptolab"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-700/70"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <KeyIcon className="w-4 h-4" />
+                      Криптолаба
                     </Link>
                   </div>
                 )}
@@ -380,6 +403,15 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
               <ShieldCheckIcon className="w-5 h-5" />
               Bug Bounty
             </Link>
+            {/* Криптолаборатория в мобильном меню */}
+            <Link
+              to="/cryptolab"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <KeyIcon className="w-5 h-5" />
+              Криптолаборатория
+            </Link>
 
             {user ? (
               <>
@@ -502,6 +534,12 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                 <li>
                   <Link to="/courses" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                     Курсы
+                  </Link>
+                </li>
+                {/* Криптолаборатория в футере */}
+                <li>
+                  <Link to="/cryptolab" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Криптолаборатория
                   </Link>
                 </li>
               </ul>

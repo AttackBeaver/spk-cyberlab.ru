@@ -1,33 +1,34 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 import AdminPanel from './pages/AdminPanel';
 import Home from './pages/Home';
-import Courses from './pages/Courses';
-import TeacherCourses from './pages/TeacherCourses';
+import Courses from './pages/courses/Courses';
+import TeacherCourses from './pages/courses/TeacherCourses';
 import { useAuth } from './hooks/useAuth';
 import Layout from './components/Layout';
-import CourseDetail from './pages/CourseDetails';
+import CourseDetail from './pages/courses/CourseDetails';
 import Memes from './pages/Memes';
 import Profile from './pages/Profile';
-import About from './pages/About';
-import Contacts from './pages/Contacts';
-import FAQ from './pages/FAQ';
+import About from './pages/static/About';
+import Contacts from './pages/static/Contacts';
+import FAQ from './pages/static/FAQ';
 import News from './pages/News';
-import NotFound from './pages/NotFound';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import ServerError from './pages/ServerError';
+import NotFound from './pages/static/NotFound';
+import Privacy from './pages/static/Privacy';
+import Terms from './pages/static/Terms';
+import ServerError from './pages/static/ServerError';
 import BugBounty from './pages/BugBounty';
-import SandboxTasks from './pages/SandboxTasks';
-import TaskExecution from './pages/TaskExecution';
-import TeacherSandbox from './pages/TeacherSandbox';
-import SandboxPreview from './pages/SandboxPreview';
-import TeacherSandboxSQLCreator from './pages/TeacherSandboxSQLCreator';
-import TaskExecutionSQL from './pages/TaskExecutionSQL';
-import TeacherSandboxTemplateCreator from './pages/TeacherSandboxTemplateCreator';
-import TeacherSandboxReports from './pages/TeacherSandboxReports';
-import CourseManage from './pages/CourseManage';
+import SandboxTasks from './pages/sandbox/SandboxTasks';
+import TaskExecution from './pages/sandbox/TaskExecution';
+import TeacherSandbox from './pages/sandbox/TeacherSandbox';
+import SandboxPreview from './pages/sandbox/SandboxPreview';
+import TeacherSandboxSQLCreator from './pages/sandbox/TeacherSandboxSQLCreator';
+import TaskExecutionSQL from './pages/sandbox/TaskExecutionSQL';
+import TeacherSandboxTemplateCreator from './pages/sandbox/TeacherSandboxTemplateCreator';
+import TeacherSandboxReports from './pages/sandbox/TeacherSandboxReports';
+import CourseManage from './pages/courses/CourseManage';
+import CryptoLab from './pages/cryptoLab/CryptoLab';
 
 function App() {
   const { user, loading } = useAuth();
@@ -52,7 +53,6 @@ function App() {
           element={user?.role === 'ADMIN' ? <Layout><AdminPanel /></Layout> : <Navigate to="/" />}
         />
         <Route path="/course/:id" element={user ? <CourseDetail /> : <Navigate to="/login" />} />
-        {/* Старый маршрут редактирования удалён, вместо него используется /course/:courseId/manage */}
         <Route path="/memes" element={<Memes />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
         <Route path="/about" element={<About />} />
@@ -64,6 +64,7 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/500" element={<ServerError />} />
         <Route path="/bug-bounty" element={user ? <BugBounty /> : <Navigate to="/login" />} />
+        <Route path="/cryptolab" element={user ? <CryptoLab /> : <Navigate to="/login" />} />
         <Route path="/sandbox" element={user ? <SandboxTasks /> : <Navigate to="/login" />} />
         <Route
           path="/sandbox/task/:taskId/attempt/:attemptId"
