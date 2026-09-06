@@ -9,6 +9,9 @@ import {
   FaceSmileIcon,
   CubeIcon,
   ShieldCheckIcon,
+  KeyIcon,
+  ServerIcon,
+  CpuChipIcon,
 } from '@heroicons/react/24/outline';
 
 const Home = () => {
@@ -47,17 +50,23 @@ const Home = () => {
             {/* Карточки направлений */}
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl mx-auto">
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-100 dark:border-gray-700 transition hover:shadow-lg">
-                <div className="text-3xl mb-2">🔐</div>
+                <div className="mb-2">
+                  <KeyIcon className="w-10 h-10 mx-auto text-blue-600 dark:text-blue-400" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Криптография</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Изучайте шифры и методы защиты информации</p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-100 dark:border-gray-700 transition hover:shadow-lg">
-                <div className="text-3xl mb-2">🗄️</div>
+                <div className="mb-2">
+                  <ServerIcon className="w-10 h-10 mx-auto text-green-600 dark:text-green-400" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Базы данных</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Практика SQL и защита от инъекций</p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-100 dark:border-gray-700 transition hover:shadow-lg">
-                <div className="text-3xl mb-2">🤖</div>
+                <div className="mb-2">
+                  <CpuChipIcon className="w-10 h-10 mx-auto text-purple-600 dark:text-purple-400" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Искусственный интеллект</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Основы машинного обучения и нейросетей</p>
               </div>
