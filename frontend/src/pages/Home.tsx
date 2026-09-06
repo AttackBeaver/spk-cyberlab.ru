@@ -192,7 +192,7 @@ const Home = () => {
             <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30 group-hover:bg-red-200 dark:group-hover:bg-red-800/50 transition-colors">
               <ShieldCheckIcon className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="mt-3 text-lg font-semibold text-gray-800 dark:text-gray-200">Bug Bounty</h3>
+            <h3 className="mt-3 text-lg font-semibold text-gray-800 dark:text-gray-200">BugBounty</h3>
             <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">Поиск уязвимостей</p>
           </Link>
         </div>

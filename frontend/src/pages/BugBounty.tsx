@@ -138,7 +138,7 @@ const BugBounty = () => {
       <Layout>
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
           <ShieldCheckIcon className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400">Пожалуйста, войдите, чтобы участвовать в программе Bug Bounty</p>
+          <p className="text-gray-600 dark:text-gray-400">Пожалуйста, войдите, чтобы участвовать в программе BugBounty</p>
         </div>
       </Layout>
     );
@@ -151,7 +151,7 @@ const BugBounty = () => {
         <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
             <ShieldCheckIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            Bug Bounty
+            BugBounty
           </h1>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -181,7 +181,7 @@ const BugBounty = () => {
             <InformationCircleIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-blue-800 dark:text-blue-300">Что такое Bug Bounty?</h3>
+            <h3 className="font-semibold text-blue-800 dark:text-blue-300">Что такое BugBounty?</h3>
             <p className="text-blue-700 dark:text-blue-300 text-sm">
               Это программа по поиску ошибок и уязвимостей на платформе. Если вы нашли баг,
               опишите его в отчёте. Администратор проверит и, если ошибка подтвердится, вы получите

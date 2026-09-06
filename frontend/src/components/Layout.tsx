@@ -170,7 +170,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                 >
                   <span className="flex items-center gap-1.5">
                     <ShieldCheckIcon className="w-4 h-4" />
-                    Bug Bounty
+                    BugBounty
                   </span>
                 </Link>
                 {/* Криптолаборатория */}
@@ -235,7 +235,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <ShieldCheckIcon className="w-4 h-4" />
-                      Bug Bounty
+                      BugBounty
                     </Link>
                     <Link
                       to="/cryptolab"
@@ -401,7 +401,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
               onClick={() => setIsMenuOpen(false)}
             >
               <ShieldCheckIcon className="w-5 h-5" />
-              Bug Bounty
+              BugBounty
             </Link>
             {/* Криптолаборатория в мобильном меню */}
             <Link
@@ -561,7 +561,7 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
                 </li>
                 <li>
                   <Link to="/bug-bounty" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    Bug Bounty
+                    BugBounty
                   </Link>
                 </li>
               </ul>

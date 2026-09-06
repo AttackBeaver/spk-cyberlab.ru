@@ -1074,7 +1074,7 @@ const AdminPanel = () => {
             { key: 'teachers', label: 'Преподаватели', icon: AcademicCapIcon },
             { key: 'courses', label: 'Курсы', icon: BookOpenIcon },
             { key: 'news', label: 'Новости', icon: NewspaperIcon },
-            { key: 'bugbounty', label: 'Bug Bounty', icon: ShieldCheckIcon },
+            { key: 'bugbounty', label: 'BugBounty', icon: ShieldCheckIcon },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
             const Icon = tab.icon;
@@ -1562,7 +1562,7 @@ const AdminPanel = () => {
         {activeTab === 'bugbounty' && (
           <div>
             <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Управление отчётами Bug Bounty</h2>
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Управление отчётами BugBounty</h2>
             </div>
 
             {bugMessage && (
