@@ -280,7 +280,6 @@ const Memes = () => {
     }
   };
 
-  // Показывать ли в модалке кнопки модерации (pending-мем)
   const showModerationInModal = !!selectedMeme
     && !selectedMeme.approved
     && user?.role === 'ADMIN';
@@ -525,9 +524,9 @@ const Memes = () => {
                       </div>
                       <div className="mt-2">
                         {isVideo(meme.imageUrl) ? (
-                          <video src={meme.imageUrl} className="h-24 w-auto object-cover rounded" muted />
+                          <video src={meme.imageUrl} className="h-24 w-auto object-cover rounded" muted preload="metadata" />
                         ) : (
-                          <img src={meme.imageUrl} alt={meme.title} className="h-24 w-auto object-cover rounded" />
+                          <img src={meme.imageUrl} alt={meme.title} className="h-24 w-auto object-cover rounded" loading="lazy" />
                         )}
                       </div>
                     </div>
@@ -614,15 +613,14 @@ const Memes = () => {
                       <video
                         src={meme.imageUrl}
                         className="w-full h-full object-contain"
-                        autoPlay
-                        loop
+                        preload="metadata"
                         muted
                         playsInline
                       />
                     ) : isGif(meme.imageUrl) ? (
-                      <img src={meme.imageUrl} alt={meme.title} className="w-full h-full object-contain" />
+                      <img src={meme.imageUrl} alt={meme.title} className="w-full h-full object-contain" loading="lazy" />
                     ) : (
-                      <img src={meme.imageUrl} alt={meme.title} className="w-full h-full object-contain group-hover:scale-105 transition duration-300" />
+                      <img src={meme.imageUrl} alt={meme.title} className="w-full h-full object-contain group-hover:scale-105 transition duration-300" loading="lazy" />
                     )}
                     <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                       {getCategoryIcon(meme.category)}
@@ -694,10 +692,10 @@ const Memes = () => {
         )}
       </div>
 
-      {/* Модальное окно */}
+      {/* Модальное окно — без backdrop-blur и без scale-анимации, быстрый рендер */}
       {selectedMeme && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
           onClick={handleCloseModal}
         >
           <div
@@ -722,11 +720,16 @@ const Memes = () => {
                   className="max-w-full max-h-[70vh] rounded"
                 />
               ) : (
-                <img src={selectedMeme.imageUrl} alt={selectedMeme.title} className="max-w-full max-h-[70vh] rounded" />
+                <img
+                  src={selectedMeme.imageUrl}
+                  alt={selectedMeme.title}
+                  className="max-w-full max-h-[70vh] rounded"
+                  decoding="async"
+                  loading="eager"
+                />
               )}
             </div>
 
-            {/* Кнопки модерации для pending-мема */}
             {showModerationInModal && (
               <div className="px-4 pt-3 border-t dark:border-gray-700 flex flex-wrap gap-2">
                 <button
