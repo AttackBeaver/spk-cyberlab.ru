@@ -129,7 +129,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
   res.json(courses);
 };
 
-// Удаление пользователя (только ADMIN) – ОБНОВЛЁННАЯ ВЕРСИЯ
+// Удаление пользователя (только ADMIN) – логи НЕ удаляем, обнуляем userId
 export const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const currentUserId = (req as any).user.id;
@@ -143,7 +143,7 @@ export const deleteUser = async (req: Request, res: Response) => {
   try {
     // Используем транзакцию для удаления всех зависимостей
     await prisma.$transaction(async (tx) => {
-      // 1. Удаляем записи с обязательной связью (если они существуют)
+      // 1. Удаляем записи с обязательной связью
       await tx.taskAttempt.deleteMany({ where: { userId } });
       await tx.meme.deleteMany({ where: { authorId: userId } });
       await tx.userAchievement.deleteMany({ where: { userId } });
@@ -153,9 +153,15 @@ export const deleteUser = async (req: Request, res: Response) => {
       await tx.sandboxTask.deleteMany({ where: { createdBy: userId } });
       await tx.news.deleteMany({ where: { authorId: userId } });
       await tx.bugReport.deleteMany({ where: { userId } });
-      await tx.log.deleteMany({ where: { userId } });
 
-      // 2. Для опциональных связей устанавливаем null вместо удаления
+      // 2. Аудит-логи НЕ удаляем — обнуляем userId (userId в Log nullable)
+      //    В UI для старых логов будет "Удалённый пользователь"
+      await tx.log.updateMany({
+        where: { userId },
+        data: { userId: null },
+      });
+
+      // 3. Для опциональных связей устанавливаем null вместо удаления
       await tx.bugReport.updateMany({
         where: { respondedBy: userId },
         data: { respondedBy: null, adminResponse: null, respondedAt: null },
@@ -165,11 +171,10 @@ export const deleteUser = async (req: Request, res: Response) => {
         data: { reviewedBy: null, reviewedAt: null },
       });
 
-      // 3. Удаляем курсы, созданные пользователем (если он преподаватель/админ)
-      //    Если хотите сохранить курсы, закомментируйте эту строку и обработайте иначе
+      // 4. Удаляем курсы, созданные пользователем
       await tx.course.deleteMany({ where: { teacherId: userId } });
 
-      // 4. Удаляем самого пользователя
+      // 5. Удаляем самого пользователя
       await tx.user.delete({ where: { id: userId } });
     });
 
@@ -236,4 +241,95 @@ export const updateUser = async (req: Request, res: Response) => {
   });
 
   res.json(updated);
+};
+
+// ===== НОВОЕ: Получить логи аудита (только ADMIN) =====
+/**
+ * GET /api/admin/logs
+ *
+ * Query-параметры (все опциональны):
+ *   - userId   — ID пользователя (точное совпадение)
+ *   - action   — тип действия (точное совпадение, например LOGIN)
+ *   - dateFrom — ISO-дата, начало периода (включительно)
+ *   - dateTo   — ISO-дата, конец периода (включительно)
+ *   - search   — подстрока для поиска в details (регистронезависимо)
+ *   - page     — номер страницы (по умолчанию 1)
+ *   - limit    — записей на страницу (по умолчанию 50, максимум 200)
+ *
+ * Ответ:
+ *   { logs, total, page, limit, pages, actions }
+ *   actions — список уникальных типов действий в БД (для dropdown фильтра)
+ */
+export const getLogs = async (req: Request, res: Response) => {
+  const {
+    userId,
+    action,
+    dateFrom,
+    dateTo,
+    search,
+    page = '1',
+    limit = '50',
+  } = req.query as Record<string, string | undefined>;
+
+  // Пагинация
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(200, Math.max(1, parseInt(limit) || 50));
+  const skip = (pageNum - 1) * limitNum;
+
+  // Собираем условия WHERE
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {};
+
+  if (userId && userId !== 'all') {
+    const id = Number(userId);
+    if (!isNaN(id)) where.userId = id;
+  }
+
+  if (action && action !== 'all') {
+    where.action = action;
+  }
+
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      if (!isNaN(d.getTime())) where.createdAt.gte = d;
+    }
+    if (dateTo) {
+      const d = new Date(dateTo);
+      if (!isNaN(d.getTime())) where.createdAt.lte = d;
+    }
+  }
+
+  if (search && search.trim()) {
+    where.details = { contains: search.trim(), mode: 'insensitive' };
+  }
+
+  // Параллельно: логи, общее количество, список уникальных actions
+  const [logs, total, actionsResult] = await Promise.all([
+    prisma.log.findMany({
+      where,
+      include: {
+        user: { select: { id: true, username: true, fullName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limitNum,
+    }),
+    prisma.log.count({ where }),
+    prisma.log.findMany({
+      select: { action: true },
+      distinct: ['action'],
+      orderBy: { action: 'asc' },
+    }),
+  ]);
+
+  res.json({
+    logs,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    pages: Math.ceil(total / limitNum),
+    actions: actionsResult.map((a) => a.action),
+  });
 };

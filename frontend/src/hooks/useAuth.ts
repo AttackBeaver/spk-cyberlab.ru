@@ -66,7 +66,13 @@ export const useAuth = () => {
     return res.data;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Токен ещё в localStorage → api.ts подставит его в Authorization
+      await api.post('/auth/logout');
+    } catch {
+      // Не критично: если лог не записался — всё равно выходим
+    }
     localStorage.removeItem('token');
     setUser(null);
   };

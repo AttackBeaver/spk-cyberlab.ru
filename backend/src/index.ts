@@ -17,6 +17,7 @@ import newsRoutes from './routes/newsRoutes';
 import bugReportRoutes from './routes/bugReportRoutes';
 import sandboxRoutes from './routes/sandboxRoutes';
 import sandboxTemplateRoutes from './routes/sandboxTemplateRoutes';
+import { auditLog } from './middleware/auditLog';
 
 dotenv.config();
 
@@ -25,6 +26,9 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// ===== Аудит: логирует все POST/PUT/PATCH/DELETE (кроме /api/auth/*) =====
+app.use(auditLog);
 
 // Раздача статики из папки uploads
 const uploadDir = path.join(__dirname, '../uploads');

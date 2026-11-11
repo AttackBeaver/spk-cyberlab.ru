@@ -41,8 +41,8 @@ const Layout = ({ children, hideAuth = false }: LayoutProps) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setIsMenuOpen(false);
     window.location.href = '/';
   };

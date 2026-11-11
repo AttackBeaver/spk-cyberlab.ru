@@ -15,6 +15,7 @@ import {
   ArrowPathIcon,
   CheckIcon,
   PhotoIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
 // ---------- Интерфейсы ----------
@@ -75,6 +76,16 @@ interface BugReport {
   responder?: { fullName: string };
 }
 
+interface LogEntry {
+  id: number;
+  userId: number | null;
+  action: string;
+  details: string | null;
+  ip: string | null;
+  createdAt: string;
+  user: { id: number; username: string | null; fullName: string } | null;
+}
+
 type ModalType =
   | 'createGroup'
   | 'addStudents'
@@ -104,7 +115,9 @@ const AdminPanel = () => {
   const { user } = useAuth();
 
   // ---- Вкладки ----
-  const [activeTab, setActiveTab] = useState<'groups' | 'students' | 'teachers' | 'courses' | 'news' | 'bugbounty'>('groups');
+  const [activeTab, setActiveTab] = useState<
+    'groups' | 'students' | 'teachers' | 'courses' | 'news' | 'bugbounty' | 'logs'
+  >('groups');
 
   // ---- Данные ----
   const [groups, setGroups] = useState<Group[]>([]);
@@ -181,6 +194,22 @@ const AdminPanel = () => {
   const [status, setStatus] = useState('IN_PROGRESS');
   const [bugMessage, setBugMessage] = useState('');
 
+  // ---- Логи (аудит) ----
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState('');
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsTotal, setLogsTotal] = useState(0);
+  const [logsPages, setLogsPages] = useState(0);
+  const [logActions, setLogActions] = useState<string[]>([]);
+  // Фильтры
+  const [logFilterUserId, setLogFilterUserId] = useState<number | 'all'>('all');
+  const [logFilterAction, setLogFilterAction] = useState<string>('all');
+  const [logSearch, setLogSearch] = useState('');
+  const [logDateFrom, setLogDateFrom] = useState('');
+  const [logDateTo, setLogDateTo] = useState('');
+  const LOGS_PER_PAGE = 50;
+
   // ---- Загрузка данных ----
   const fetchGroups = async () => {
     try {
@@ -235,21 +264,59 @@ const AdminPanel = () => {
     }
   };
 
+  // ---- Загрузка логов ----
+  const fetchLogs = useCallback(async (page = logsPage) => {
+    setLogsLoading(true);
+    setLogsError('');
+    try {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(LOGS_PER_PAGE));
+      if (logFilterUserId !== 'all') params.set('userId', String(logFilterUserId));
+      if (logFilterAction !== 'all') params.set('action', logFilterAction);
+      if (logSearch.trim()) params.set('search', logSearch.trim());
+      if (logDateFrom) params.set('dateFrom', new Date(logDateFrom).toISOString());
+      if (logDateTo) {
+        // Конец дня: берём dateTo и добавляем 23:59:59.999
+        const d = new Date(logDateTo);
+        d.setHours(23, 59, 59, 999);
+        params.set('dateTo', d.toISOString());
+      }
+
+      const res = await api.get(`/admin/logs?${params.toString()}`);
+      setLogs(res.data.logs);
+      setLogsTotal(res.data.total);
+      setLogsPages(res.data.pages);
+      setLogActions(res.data.actions || []);
+    } catch {
+      setLogsError('Ошибка загрузки логов');
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [logFilterUserId, logFilterAction, logSearch, logDateFrom, logDateTo, logsPage]);
+
   useEffect(() => {
     const loadData = async () => {
       if (activeTab === 'groups') {
         await fetchGroups();
       } else if (activeTab === 'students' || activeTab === 'teachers') {
         await fetchUsers();
+        await fetchGroups();
       } else if (activeTab === 'courses') {
         await fetchCourses();
+        await fetchUsers();
+        await fetchGroups();
       } else if (activeTab === 'news') {
         await fetchNews();
       } else if (activeTab === 'bugbounty') {
         await fetchBugReports();
+      } else if (activeTab === 'logs') {
+        await fetchUsers();
+        await fetchLogs(1);
       }
     };
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // ---- Вспомогательные функции ----
@@ -660,7 +727,49 @@ const AdminPanel = () => {
     }
   };
 
-  // ---- Рендер модальных окон (улучшенный стиль) ----
+  // ---- Цвет action для логов ----
+  const getActionColor = (action: string) => {
+    if (action === 'LOGIN') return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    if (action === 'LOGIN_FAILED') return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    if (action === 'LOGOUT') return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    if (action === 'REGISTER') return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+    if (action === 'PASSWORD_RESET') return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+    if (action.startsWith('HTTP_MUTATION')) return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+    if (action.endsWith('_DELETE') || action.endsWith('_FAILED')) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+  };
+
+  // ---- Фильтры логов ----
+  const handleResetLogFilters = () => {
+    setLogFilterUserId('all');
+    setLogFilterAction('all');
+    setLogSearch('');
+    setLogDateFrom('');
+    setLogDateTo('');
+    setLogsPage(1);
+    // fetchLogs вызовется через useEffect — но так как параметры в useCallback-зависимостях,
+    // после setState он пересоздастся и загрузит по фильтрам (кроме page=1 — надо вручную)
+    setTimeout(() => fetchLogs(1), 0);
+  };
+
+  const handleApplyLogFilters = () => {
+    setLogsPage(1);
+    fetchLogs(1);
+  };
+
+  const handleLogsPrevPage = () => {
+    const newPage = Math.max(1, logsPage - 1);
+    setLogsPage(newPage);
+    fetchLogs(newPage);
+  };
+
+  const handleLogsNextPage = () => {
+    const newPage = Math.min(logsPages, logsPage + 1);
+    setLogsPage(newPage);
+    fetchLogs(newPage);
+  };
+
+  // ---- Рендер модальных окон ----
   const renderModal = () => {
     if (!modalType) return null;
 
@@ -1075,6 +1184,7 @@ const AdminPanel = () => {
             { key: 'courses', label: 'Курсы', icon: BookOpenIcon },
             { key: 'news', label: 'Новости', icon: NewspaperIcon },
             { key: 'bugbounty', label: 'BugBounty', icon: ShieldCheckIcon },
+            { key: 'logs', label: 'Логи', icon: DocumentTextIcon },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
             const Icon = tab.icon;
@@ -1674,6 +1784,194 @@ const AdminPanel = () => {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ---------- ЛОГИ (АУДИТ) ---------- */}
+        {activeTab === 'logs' && (
+          <div>
+            <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <DocumentTextIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                Логи действий пользователей
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fetchLogs(logsPage)}
+                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+                >
+                  <ArrowPathIcon className="w-4 h-4" />
+                  Обновить
+                </button>
+              </div>
+            </div>
+
+            {/* Фильтры */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 border border-gray-100 dark:border-gray-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Пользователь</label>
+                  <select
+                    value={logFilterUserId}
+                    onChange={(e) => setLogFilterUserId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  >
+                    <option value="all">Все пользователи</option>
+                    {users
+                      .slice()
+                      .sort((a, b) => a.fullName.localeCompare(b.fullName))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.fullName} ({u.role})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Действие</label>
+                  <select
+                    value={logFilterAction}
+                    onChange={(e) => setLogFilterAction(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  >
+                    <option value="all">Все действия</option>
+                    {logActions.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Поиск по деталям</label>
+                  <input
+                    type="text"
+                    value={logSearch}
+                    onChange={(e) => setLogSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleApplyLogFilters(); }}
+                    placeholder="подстрока в details..."
+                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">С даты</label>
+                  <input
+                    type="date"
+                    value={logDateFrom}
+                    onChange={(e) => setLogDateFrom(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">По дату</label>
+                  <input
+                    type="date"
+                    value={logDateTo}
+                    onChange={(e) => setLogDateTo(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={handleApplyLogFilters}
+                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+                  >
+                    Применить
+                  </button>
+                  <button
+                    onClick={handleResetLogFilters}
+                    className="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
+                  >
+                    Сбросить
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Таблица */}
+            {logsLoading ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
+            ) : logsError ? (
+              <div className="text-red-500 dark:text-red-400 text-center py-8">{logsError}</div>
+            ) : logs.length === 0 ? (
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow">
+                <DocumentTextIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">Записей нет</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Время</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Пользователь</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Действие</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Детали</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">IP</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {logs.map((log) => (
+                          <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                            <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
+                              {new Date(log.createdAt).toLocaleString('ru-RU')}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                              {log.user ? (
+                                <span>
+                                  {log.user.fullName}
+                                  {log.user.username && <span className="text-gray-500 dark:text-gray-400 text-xs"> ({log.user.username})</span>}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500 italic">Удалённый пользователь</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-md break-words">
+                              {log.details || <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 font-mono">
+                              {log.ip || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Пагинация */}
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Стр. <span className="font-semibold text-gray-900 dark:text-gray-100">{logsPage}</span> из{' '}
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{Math.max(1, logsPages)}</span>{' '}
+                    (всего {logsTotal} записей)
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleLogsPrevPage}
+                      disabled={logsPage <= 1 || logsLoading}
+                      className="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← Назад
+                    </button>
+                    <button
+                      onClick={handleLogsNextPage}
+                      disabled={logsPage >= logsPages || logsLoading}
+                      className="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Вперёд →
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}

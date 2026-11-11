@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma';
 import { awardAchievement } from '../utils/achievementUtils';
+import { logAction, LogActions } from '../utils/logger';
 
 // Регистрация студента
 export const registerStudent = async (req: Request, res: Response) => {
@@ -50,6 +51,14 @@ export const registerStudent = async (req: Request, res: Response) => {
     { expiresIn: '7d' }
   );
 
+  // Аудит: успешная регистрация
+  await logAction({
+    action: LogActions.REGISTER,
+    details: `Регистрация студента: ${updatedUser.username} (${updatedUser.fullName})`,
+    userId: updatedUser.id,
+    req,
+  });
+
   res.status(201).json({
     token,
     user: {
@@ -69,16 +78,36 @@ export const login = async (req: Request, res: Response) => {
     where: { username: username },
   });
 
+  // Пользователь не найден
   if (!user) {
+    await logAction({
+      action: LogActions.LOGIN_FAILED,
+      details: `Неудачный вход: пользователь "${username}" не найден`,
+      req,
+    });
     return res.status(401).json({ error: 'Неверный логин или пароль' });
   }
 
+  // Учётная запись не активирована
   if (!user.passwordHash) {
+    await logAction({
+      action: LogActions.LOGIN_FAILED,
+      details: `Неудачный вход: учётная запись "${username}" не активирована`,
+      userId: user.id,
+      req,
+    });
     return res.status(401).json({ error: 'Учётная запись не активирована' });
   }
 
+  // Неверный пароль
   const isValid = await bcrypt.compare(password, user.passwordHash);
   if (!isValid) {
+    await logAction({
+      action: LogActions.LOGIN_FAILED,
+      details: `Неудачный вход: неверный пароль для "${username}"`,
+      userId: user.id,
+      req,
+    });
     return res.status(401).json({ error: 'Неверный логин или пароль' });
   }
 
@@ -87,6 +116,14 @@ export const login = async (req: Request, res: Response) => {
     process.env.JWT_SECRET as string,
     { expiresIn: '7d' }
   );
+
+  // Аудит: успешный вход
+  await logAction({
+    action: LogActions.LOGIN,
+    details: `Успешный вход: ${user.username} (${user.fullName})`,
+    userId: user.id,
+    req,
+  });
 
   res.json({
     token,
@@ -125,4 +162,28 @@ export const getGroups = async (req: Request, res: Response) => {
     orderBy: { name: 'asc' },
   });
   res.json(groups);
+};
+
+// Выход из системы (для аудита; JWT остаётся валидным до истечения)
+export const logout = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id as number | undefined;
+
+  if (userId) {
+    // Подтянем username для читаемого лога
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, fullName: true },
+    });
+
+    await logAction({
+      action: LogActions.LOGOUT,
+      details: user
+        ? `Выход: ${user.username} (${user.fullName})`
+        : `Выход: userId=${userId}`,
+      userId,
+      req,
+    });
+  }
+
+  res.json({ ok: true });
 };
