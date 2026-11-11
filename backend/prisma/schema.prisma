@@ -17,58 +17,58 @@ enum Role {
 }
 
 model User {
-  id             Int          @id @default(autoincrement())
-  username       String?      @unique
-  passwordHash   String?      // null до активации
-  fullName       String
-  role           Role         @default(STUDENT)
-  group          Group?       @relation(fields: [groupId], references: [id])
-  groupId        Int?
-  studentNumber  Int?         // номер по списку
-  createdAt      DateTime     @default(now())
-  lastLogin      DateTime?    @updatedAt
+  id                     Int                    @id @default(autoincrement())
+  username               String?                @unique
+  passwordHash           String? // null до активации
+  fullName               String
+  role                   Role                   @default(STUDENT)
+  group                  Group?                 @relation(fields: [groupId], references: [id])
+  groupId                Int?
+  studentNumber          Int? // номер по списку
+  createdAt              DateTime               @default(now())
+  lastLogin              DateTime?              @updatedAt
   // связи
-  taskAttempts   TaskAttempt[]
-  memes          Meme[]
-  achievements   UserAchievement[]
-  createdCourses Course[]     @relation("TeacherCourses")
-  sandboxSessions SandboxSession[]
-  logs           Log[]
-  news           News[]
-  bugReports      BugReport[]     @relation("UserBugReports")
-  bugReportsResponded BugReport[] @relation("ResponderBugReports")
-  memeVotes      MemeVote[]
+  taskAttempts           TaskAttempt[]
+  memes                  Meme[]
+  achievements           UserAchievement[]
+  createdCourses         Course[]               @relation("TeacherCourses")
+  sandboxSessions        SandboxSession[]
+  logs                   Log[]
+  news                   News[]
+  bugReports             BugReport[]            @relation("UserBugReports")
+  bugReportsResponded    BugReport[]            @relation("ResponderBugReports")
+  memeVotes              MemeVote[]
   // === Добавлено для полигона ===
-  sandboxTasksCreated SandboxTask[]      // задания, созданные преподавателем/админом
-  sandboxAttempts     SandboxAttempt[]   // попытки выполнения заданий студентом
+  sandboxTasksCreated    SandboxTask[] // задания, созданные преподавателем/админом
+  sandboxAttempts        SandboxAttempt[] // попытки выполнения заданий студентом
   sandboxReportsReviewed SandboxStudentReport[] @relation("Reviewer")
 }
 
 model Group {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  prefix       String?
-  year         Int
-  students     User[]
-  createdAt    DateTime @default(now())
+  id                Int                @id @default(autoincrement())
+  name              String             @unique
+  prefix            String?
+  year              Int
+  students          User[]
+  createdAt         DateTime           @default(now())
   // === Добавлено для полигона ===
   sandboxTaskGroups SandboxTaskGroup[]
   // === Добавлено для курсов ===
-  courses      CourseGroup[] // группы, имеющие доступ к курсам
+  courses           CourseGroup[] // группы, имеющие доступ к курсам
 }
 
 model Course {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String?
-  teacherId    Int
-  teacher      User     @relation("TeacherCourses", fields: [teacherId], references: [id])
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String?
+  teacherId   Int
+  teacher     User          @relation("TeacherCourses", fields: [teacherId], references: [id])
   // === СТАРЫЕ СВЯЗИ (будут заменены на lectures) ===
-  modules      Module[] // устаревает, оставлено для обратной совместимости
+  modules     Module[] // устаревает, оставлено для обратной совместимости
   // === НОВЫЕ СВЯЗИ ===
-  lectures     Lecture[]      // список лекций (PDF)
-  groups       CourseGroup[]  // группы, имеющие доступ к курсу
-  createdAt    DateTime @default(now())
+  lectures    Lecture[] // список лекций (PDF)
+  groups      CourseGroup[] // группы, имеющие доступ к курсу
+  createdAt   DateTime      @default(now())
 }
 
 // === НОВЫЕ МОДЕЛИ ДЛЯ КУРСОВ ===
@@ -100,36 +100,36 @@ model Lecture {
 
 // === СТАРЫЕ МОДЕЛИ (оставлены для обратной совместимости, но не используются) ===
 model Module {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String?
-  order        Int
-  courseId     Int
-  course       Course   @relation(fields: [courseId], references: [id])
-  topics       Topic[]
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  order       Int
+  courseId    Int
+  course      Course  @relation(fields: [courseId], references: [id])
+  topics      Topic[]
 }
 
 model Topic {
-  id           Int      @id @default(autoincrement())
-  title        String
-  content      String?
-  order        Int
-  moduleId     Int
-  module       Module   @relation(fields: [moduleId], references: [id])
-  tasks        Task[]
+  id       Int     @id @default(autoincrement())
+  title    String
+  content  String?
+  order    Int
+  moduleId Int
+  module   Module  @relation(fields: [moduleId], references: [id])
+  tasks    Task[]
 }
 
 model Task {
-  id               Int            @id @default(autoincrement())
+  id               Int              @id @default(autoincrement())
   title            String
   description      String
   type             TaskType
   solutionTemplate String?
-  difficulty       Int            @default(1)
+  difficulty       Int              @default(1)
   timeLimit        Int?
   attemptsLimit    Int?
   topicId          Int
-  topic            Topic          @relation(fields: [topicId], references: [id])
+  topic            Topic            @relation(fields: [topicId], references: [id])
   attempts         TaskAttempt[]
   sandboxSessions  SandboxSession[]
 }
@@ -143,16 +143,16 @@ enum TaskType {
 }
 
 model TaskAttempt {
-  id           Int           @id @default(autoincrement())
-  userId       Int
-  user         User          @relation(fields: [userId], references: [id])
-  taskId       Int
-  task         Task          @relation(fields: [taskId], references: [id])
-  answer       String?
-  score        Float?
-  status       AttemptStatus @default(PENDING)
-  startedAt    DateTime      @default(now())
-  completedAt  DateTime?
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  user        User          @relation(fields: [userId], references: [id])
+  taskId      Int
+  task        Task          @relation(fields: [taskId], references: [id])
+  answer      String?
+  score       Float?
+  status      AttemptStatus @default(PENDING)
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
 }
 
 enum AttemptStatus {
@@ -163,15 +163,15 @@ enum AttemptStatus {
 }
 
 model SandboxSession {
-  id           Int           @id @default(autoincrement())
-  userId       Int
-  user         User          @relation(fields: [userId], references: [id])
-  taskId       Int
-  task         Task          @relation(fields: [taskId], references: [id])
-  containerId  String?
-  status       SandboxStatus @default(ACTIVE)
-  startedAt    DateTime      @default(now())
-  expiredAt    DateTime?
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  user        User          @relation(fields: [userId], references: [id])
+  taskId      Int
+  task        Task          @relation(fields: [taskId], references: [id])
+  containerId String?
+  status      SandboxStatus @default(ACTIVE)
+  startedAt   DateTime      @default(now())
+  expiredAt   DateTime?
 }
 
 enum SandboxStatus {
@@ -181,18 +181,28 @@ enum SandboxStatus {
 }
 
 model Meme {
-  id           Int        @id @default(autoincrement())
-  title        String
-  imageUrl     String
-  category     MemeCategory?  @default(OTHER)
-  authorId     Int
-  author       User       @relation(fields: [authorId], references: [id])
-  approved     Boolean    @default(false)
-  approvedBy   Int?
-  createdAt    DateTime   @default(now())
-  likes        Int        @default(0)
-  dislikes     Int        @default(0)
-  votes        MemeVote[]
+  id         Int           @id @default(autoincrement())
+  title      String
+  imageUrl   String
+  category   MemeCategory? @default(OTHER)
+  authorId   Int
+  author     User          @relation(fields: [authorId], references: [id])
+  approved   Boolean       @default(false)
+  approvedBy Int?
+  createdAt  DateTime      @default(now())
+  likes      Int           @default(0)
+  dislikes   Int           @default(0)
+  votes      MemeVote[]
+
+  // ===== Soft-delete / отклонение =====
+  rejectedAt DateTime? // отклонён модератором
+  rejectedBy Int? // кто отклонил
+  deletedAt  DateTime? // в корзине (soft-delete)
+  deletedBy  Int? // кто удалил
+
+  @@index([approved])
+  @@index([rejectedAt])
+  @@index([deletedAt])
 }
 
 model Achievement {
@@ -205,22 +215,22 @@ model Achievement {
 }
 
 model UserAchievement {
-  id             Int          @id @default(autoincrement())
-  userId         Int
-  user           User         @relation(fields: [userId], references: [id])
-  achievementId  Int
-  achievement    Achievement  @relation(fields: [achievementId], references: [id])
-  earnedAt       DateTime     @default(now())
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  user          User        @relation(fields: [userId], references: [id])
+  achievementId Int
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  earnedAt      DateTime    @default(now())
 }
 
 model Log {
-  id           Int      @id @default(autoincrement())
-  userId       Int?
-  user         User?    @relation(fields: [userId], references: [id])
-  action       String
-  details      String?
-  ip           String?
-  createdAt    DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ip        String?
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([action])
@@ -240,21 +250,21 @@ model News {
 }
 
 model BugReport {
-  id            Int             @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   title         String
   description   String
   steps         String?
-  severity      BugSeverity     @default(MEDIUM)
+  severity      BugSeverity  @default(MEDIUM)
   category      BugCategory?
-  status        BugStatus       @default(NEW)
+  status        BugStatus    @default(NEW)
   userId        Int
-  user          User            @relation("UserBugReports", fields: [userId], references: [id])
+  user          User         @relation("UserBugReports", fields: [userId], references: [id])
   adminResponse String?
   respondedBy   Int?
-  responder     User?           @relation("ResponderBugReports", fields: [respondedBy], references: [id])
+  responder     User?        @relation("ResponderBugReports", fields: [respondedBy], references: [id])
   respondedAt   DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -290,13 +300,13 @@ enum MemeCategory {
 }
 
 model MemeVote {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   memeId    Int
-  meme      Meme      @relation(fields: [memeId], references: [id])
+  meme      Meme     @relation(fields: [memeId], references: [id])
   voteType  VoteType
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userId, memeId])
 }
@@ -309,36 +319,36 @@ enum VoteType {
 // ===== Полигон-песочница =====
 
 model SandboxTask {
-  id            Int                 @id @default(autoincrement())
-  title         String
-  description   String
-  instructions  String?
-  type          SandboxTaskType     @default(CUSTOM)
-  answerTemplate String?            // шаблон правильного ответа для CUSTOM
-  htmlTemplate  String?             // HTML-макет для интерактивных заданий
-  expectedResult String?            // ожидаемый результат (текст после успешной атаки)
-  difficulty    Int                 @default(1)
-  timeLimit     Int?
-  attemptsLimit Int?
-  points        Int                 @default(0)
-  createdBy     Int
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id             Int             @id @default(autoincrement())
+  title          String
+  description    String
+  instructions   String?
+  type           SandboxTaskType @default(CUSTOM)
+  answerTemplate String? // шаблон правильного ответа для CUSTOM
+  htmlTemplate   String? // HTML-макет для интерактивных заданий
+  expectedResult String? // ожидаемый результат (текст после успешной атаки)
+  difficulty     Int             @default(1)
+  timeLimit      Int?
+  attemptsLimit  Int?
+  points         Int             @default(0)
+  createdBy      Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   // ---- НОВЫЕ ПОЛЯ ----
-  templateId    Int?                // ссылка на шаблон
-  config        Json?               // JSON-конфиг (структура БД, поля, etc.)
-  hint          String?             // подсказка
-  expectedReport String?            // эталонный отчёт для автоматической проверки
-  isManualReview Boolean            @default(false) // требует ручной проверки
+  templateId     Int? // ссылка на шаблон
+  config         Json? // JSON-конфиг (структура БД, поля, etc.)
+  hint           String? // подсказка
+  expectedReport String? // эталонный отчёт для автоматической проверки
+  isManualReview Boolean @default(false) // требует ручной проверки
   // -----------------
 
-  creator       User                @relation(fields: [createdBy], references: [id])
-  groups        SandboxTaskGroup[]
-  attempts      SandboxAttempt[]
-  environments  SandboxEnvironment[]
+  creator      User                 @relation(fields: [createdBy], references: [id])
+  groups       SandboxTaskGroup[]
+  attempts     SandboxAttempt[]
+  environments SandboxEnvironment[]
   // ---- Связь с шаблоном ----
-  template      SandboxTemplate?    @relation(fields: [templateId], references: [id])
+  template     SandboxTemplate?     @relation(fields: [templateId], references: [id])
 }
 
 enum SandboxTaskType {
@@ -347,36 +357,36 @@ enum SandboxTaskType {
   PHISHING
   CODE
   CUSTOM
-  DATABASE   // новое: работа с БД
+  DATABASE // новое: работа с БД
 }
 
 model SandboxTaskGroup {
-  id        Int      @id @default(autoincrement())
-  taskId    Int
-  task      SandboxTask @relation(fields: [taskId], references: [id])
-  groupId   Int
-  group     Group    @relation(fields: [groupId], references: [id])
-  assignedAt DateTime @default(now())
+  id         Int         @id @default(autoincrement())
+  taskId     Int
+  task       SandboxTask @relation(fields: [taskId], references: [id])
+  groupId    Int
+  group      Group       @relation(fields: [groupId], references: [id])
+  assignedAt DateTime    @default(now())
 
   @@unique([taskId, groupId])
 }
 
 model SandboxAttempt {
-  id          Int              @id @default(autoincrement())
+  id          Int                  @id @default(autoincrement())
   taskId      Int
-  task        SandboxTask      @relation(fields: [taskId], references: [id])
+  task        SandboxTask          @relation(fields: [taskId], references: [id])
   userId      Int
-  user        User             @relation(fields: [userId], references: [id])
+  user        User                 @relation(fields: [userId], references: [id])
   answer      String?
   score       Float?
   status      SandboxAttemptStatus @default(PENDING)
   feedback    String?
-  startedAt   DateTime         @default(now())
+  startedAt   DateTime             @default(now())
   completedAt DateTime?
 
-  session     SandboxRunSession?
+  session SandboxRunSession?
   // ---- НОВОЕ: связь с отчётом ----
-  report      SandboxStudentReport?
+  report  SandboxStudentReport?
 }
 
 enum SandboxAttemptStatus {
@@ -387,11 +397,11 @@ enum SandboxAttemptStatus {
 }
 
 model SandboxEnvironment {
-  id        Int      @id @default(autoincrement())
-  taskId    Int
-  task      SandboxTask @relation(fields: [taskId], references: [id])
-  type      SandboxEnvType @default(SQL)
-  image     String?
+  id         Int            @id @default(autoincrement())
+  taskId     Int
+  task       SandboxTask    @relation(fields: [taskId], references: [id])
+  type       SandboxEnvType @default(SQL)
+  image      String?
   parameters Json?
 
   @@unique([taskId])
@@ -405,12 +415,12 @@ enum SandboxEnvType {
 }
 
 model SandboxRunSession {
-  id          Int      @id @default(autoincrement())
-  attemptId   Int      @unique
-  attempt     SandboxAttempt @relation(fields: [attemptId], references: [id])
+  id          Int              @id @default(autoincrement())
+  attemptId   Int              @unique
+  attempt     SandboxAttempt   @relation(fields: [attemptId], references: [id])
   containerId String?
   status      SandboxRunStatus @default(ACTIVE)
-  createdAt   DateTime @default(now())
+  createdAt   DateTime         @default(now())
   expiresAt   DateTime?
 }
 
@@ -424,29 +434,29 @@ enum SandboxRunStatus {
 
 // Шаблоны заданий
 model SandboxTemplate {
-  id            Int                 @id @default(autoincrement())
-  name          String              @unique
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
   description   String
   type          SandboxTaskType
-  configSchema  Json                // JSON-схема для настройки
-  defaultConfig Json                // базовый конфиг
-  previewHtml   String?             // HTML-макет для предпросмотра
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  configSchema  Json // JSON-схема для настройки
+  defaultConfig Json // базовый конфиг
+  previewHtml   String? // HTML-макет для предпросмотра
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
-  tasks         SandboxTask[]       // задания, созданные из этого шаблона
+  tasks SandboxTask[] // задания, созданные из этого шаблона
 }
 
 // Отчёт студента (для ручной проверки)
 model SandboxStudentReport {
-  id            Int                 @id @default(autoincrement())
-  attemptId     Int                 @unique
-  attempt       SandboxAttempt      @relation(fields: [attemptId], references: [id])
-  text          String              // текст отчёта
-  score         Float?              // оценка преподавателя
-  reviewedBy    Int?                // id преподавателя, проверившего
-  reviewer      User?               @relation("Reviewer", fields: [reviewedBy], references: [id])
-  reviewedAt    DateTime?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id         Int            @id @default(autoincrement())
+  attemptId  Int            @unique
+  attempt    SandboxAttempt @relation(fields: [attemptId], references: [id])
+  text       String // текст отчёта
+  score      Float? // оценка преподавателя
+  reviewedBy Int? // id преподавателя, проверившего
+  reviewer   User?          @relation("Reviewer", fields: [reviewedBy], references: [id])
+  reviewedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 }

@@ -10,7 +10,6 @@ import {
   MagnifyingGlassIcon,
   ArrowPathIcon,
   HeartIcon,
-  HandThumbDownIcon,
   CheckIcon,
   XCircleIcon,
   TrashIcon,
@@ -23,6 +22,7 @@ import {
   ChevronRightIcon,
   SparklesIcon,
   ShieldCheckIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 
 interface Meme {
@@ -65,10 +65,9 @@ const Memes = () => {
 
   const [pendingMemes, setPendingMemes] = useState<Meme[]>([]);
   const [showModeration, setShowModeration] = useState(false);
+  const [exportingZip, setExportingZip] = useState(false);
 
   const [authorRanking, setAuthorRanking] = useState<AuthorRank[]>([]);
-
-  // --- Модальное окно ---
   const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
 
   const fetchMemes = useCallback(async (page: number = 1) => {
@@ -139,36 +138,32 @@ const Memes = () => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { '*/*': [] },
+    accept: {
+      'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'],
+      'video/*': ['.mp4', '.webm', '.ogg', '.mov', '.avi'],
+    },
     maxSize: 10 * 1024 * 1024,
     multiple: false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      setMessage('Выберите файл');
-      return;
-    }
+    if (!file) { setMessage('Выберите файл'); return; }
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('title', title);
-
     try {
       await api.post('/memes/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setMessage('Мем отправлен на модерацию');
-      setTitle('');
-      setFile(null);
-      setPreview(null);
-      setShowForm(false);
+      setMessage('✅ Мем отправлен на модерацию');
+      setTitle(''); setFile(null); setPreview(null); setShowForm(false);
       await fetchMemes(currentPage);
       if (user?.role === 'ADMIN') await fetchPending();
       await fetchAuthorRanking();
     } catch {
-      setMessage('Ошибка отправки мема');
+      setMessage('❌ Ошибка отправки мема');
     } finally {
       setUploading(false);
     }
@@ -188,47 +183,81 @@ const Memes = () => {
             : m
         )
       );
+      if (selectedMeme?.id === memeId) {
+        setSelectedMeme({
+          ...selectedMeme,
+          likes: res.data.likes,
+          dislikes: res.data.dislikes,
+        });
+      }
     } catch (err) {
       let msg = 'Ошибка голосования';
       if (err && typeof err === 'object' && 'response' in err) {
         const errObj = err as { response?: { data?: { error?: string } } };
         msg = errObj.response?.data?.error || msg;
       }
-      setMessage(msg);
+      setMessage('❌ ' + msg);
     }
   };
 
   const handleApprove = async (id: number) => {
     try {
       await api.put(`/memes/${id}/approve`);
-      setMessage('Мем одобрен');
+      setMessage('✅ Мем одобрен');
       await fetchPending();
       await fetchMemes(currentPage);
+      await fetchAuthorRanking();
     } catch {
-      setMessage('Ошибка одобрения');
+      setMessage('❌ Ошибка одобрения');
     }
   };
 
   const handleReject = async (id: number) => {
+    if (!confirm('Отклонить мем? Он переместится в «Отклонённые» админ-панели.')) return;
     try {
-      await api.delete(`/memes/${id}/reject`);
-      setMessage('Мем отклонён');
+      await api.patch(`/memes/${id}/reject`);
+      setMessage('✅ Мем отклонён');
       await fetchPending();
     } catch {
-      setMessage('Ошибка отклонения');
+      setMessage('❌ Ошибка отклонения');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Удалить этот мем?')) return;
+    if (!confirm('Переместить мем в корзину? (можно восстановить в админ-панели)')) return;
     try {
       await api.delete(`/memes/${id}`);
-      setMessage('Мем удалён');
+      setMessage('✅ Мем в корзине');
       await fetchMemes(currentPage);
       if (user?.role === 'ADMIN') await fetchPending();
       await fetchAuthorRanking();
     } catch {
-      setMessage('Ошибка удаления');
+      setMessage('❌ Ошибка удаления');
+    }
+  };
+
+  const handleExportMemes = async () => {
+    setExportingZip(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/memes/export?includeRejected=true&includeTrash=false', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.download = `memes-${dateStr}.zip`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setMessage('✅ ZIP скачан');
+    } catch (err) {
+      console.error('[export] error:', err);
+      setMessage('❌ Ошибка скачивания ZIP');
+    } finally {
+      setExportingZip(false);
     }
   };
 
@@ -251,6 +280,11 @@ const Memes = () => {
     }
   };
 
+  // Показывать ли в модалке кнопки модерации (pending-мем)
+  const showModerationInModal = !!selectedMeme
+    && !selectedMeme.approved
+    && user?.role === 'ADMIN';
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -271,15 +305,9 @@ const Memes = () => {
                 }`}
               >
                 {showForm ? (
-                  <>
-                    <XMarkIcon className="w-5 h-5" />
-                    Отмена
-                  </>
+                  <><XMarkIcon className="w-5 h-5" /> Отмена</>
                 ) : (
-                  <>
-                    <PlusCircleIcon className="w-5 h-5" />
-                    Предложить мем
-                  </>
+                  <><PlusCircleIcon className="w-5 h-5" /> Предложить мем</>
                 )}
               </button>
             )}
@@ -415,7 +443,7 @@ const Memes = () => {
                       <PhotoIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
                       <p className="text-gray-600 dark:text-gray-400">Перетащите файл сюда или нажмите для выбора</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Поддерживаются изображения (JPG, PNG, GIF) и видео (MP4, WebM, OGG, AVI, MOV) до 10 МБ
+                        Изображения (JPG, PNG, GIF) и видео (MP4, WebM, OGG, AVI, MOV) до 10 МБ
                       </p>
                     </div>
                   )}
@@ -436,10 +464,7 @@ const Memes = () => {
                       Загрузка...
                     </>
                   ) : (
-                    <>
-                      <ArrowPathIcon className="w-5 h-5" />
-                      Отправить
-                    </>
+                    <><ArrowPathIcon className="w-5 h-5" /> Отправить</>
                   )}
                 </button>
                 <button
@@ -447,8 +472,7 @@ const Memes = () => {
                   onClick={() => setShowForm(false)}
                   className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-5 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
                 >
-                  <XMarkIcon className="w-5 h-5" />
-                  Отмена
+                  <XMarkIcon className="w-5 h-5" /> Отмена
                 </button>
               </div>
             </form>
@@ -458,16 +482,35 @@ const Memes = () => {
         {/* Модерация */}
         {showModeration && user?.role === 'ADMIN' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-100 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-              <ShieldCheckIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              Модерация мемов
-            </h2>
+            <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <ShieldCheckIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                Модерация мемов
+                {pendingMemes.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">
+                    {pendingMemes.length}
+                  </span>
+                )}
+              </h2>
+              <button
+                onClick={handleExportMemes}
+                disabled={exportingZip}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                <ArrowDownTrayIcon className="w-4 h-4" />
+                {exportingZip ? 'Формируем ZIP...' : 'Скачать ZIP'}
+              </button>
+            </div>
             {pendingMemes.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400 text-center py-4">Нет мемов на модерацию</p>
             ) : (
               <div className="space-y-4">
                 {pendingMemes.map((meme) => (
-                  <div key={meme.id} className="border dark:border-gray-700 rounded-lg p-4 flex flex-wrap justify-between items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                  <div
+                    key={meme.id}
+                    className="border dark:border-gray-700 rounded-lg p-4 flex flex-wrap justify-between items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition cursor-pointer"
+                    onClick={() => handleOpenMeme(meme)}
+                  >
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-800 dark:text-gray-200">{meme.title}</h3>
                       <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -482,7 +525,7 @@ const Memes = () => {
                       </div>
                       <div className="mt-2">
                         {isVideo(meme.imageUrl) ? (
-                          <video src={meme.imageUrl} className="h-24 w-auto object-cover rounded" controls />
+                          <video src={meme.imageUrl} className="h-24 w-auto object-cover rounded" muted />
                         ) : (
                           <img src={meme.imageUrl} alt={meme.title} className="h-24 w-auto object-cover rounded" />
                         )}
@@ -490,18 +533,16 @@ const Memes = () => {
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <button
-                        onClick={() => handleApprove(meme.id)}
+                        onClick={(e) => { e.stopPropagation(); handleApprove(meme.id); }}
                         className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm transition"
                       >
-                        <CheckIcon className="w-4 h-4" />
-                        Одобрить
+                        <CheckIcon className="w-4 h-4" /> Одобрить
                       </button>
                       <button
-                        onClick={() => handleReject(meme.id)}
+                        onClick={(e) => { e.stopPropagation(); handleReject(meme.id); }}
                         className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm transition"
                       >
-                        <XCircleIcon className="w-4 h-4" />
-                        Отклонить
+                        <XCircleIcon className="w-4 h-4" /> Отклонить
                       </button>
                     </div>
                   </div>
@@ -511,25 +552,30 @@ const Memes = () => {
           </div>
         )}
 
-        {/* Топ авторов */}
+        {/* Топ авторов — 3 первых */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6 border border-gray-100 dark:border-gray-700">
           <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
             <SparklesIcon className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
             Топ авторов мемов
           </h2>
           <div className="flex flex-wrap gap-2">
-            {authorRanking.slice(0, 10).map((author, idx) => (
+            {authorRanking.slice(0, 3).map((author, idx) => (
               <span
                 key={author.id}
                 className={`px-3 py-1 rounded-full text-sm ${
                   idx === 0
                     ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 font-semibold'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    : idx === 1
+                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium'
+                    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
                 }`}
               >
-                {idx + 1}. {author.fullName} ({author._count.memes} мемов)
+                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'} {author.fullName} ({author._count.memes})
               </span>
             ))}
+            {authorRanking.length === 0 && (
+              <span className="text-sm text-gray-500 dark:text-gray-400">Пока нет авторов</span>
+            )}
           </div>
         </div>
 
@@ -590,27 +636,18 @@ const Memes = () => {
                       {meme.author.fullName}
                     </p>
                     <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleVote(meme.id, 'LIKE'); }}
-                          className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
-                        >
-                          <HeartIcon className="w-4 h-4" />
-                          {meme.likes}
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleVote(meme.id, 'DISLIKE'); }}
-                          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition"
-                        >
-                          <HandThumbDownIcon className="w-4 h-4" />
-                          {meme.dislikes}
-                        </button>
-                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleVote(meme.id, 'LIKE'); }}
+                        className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition"
+                      >
+                        <HeartIcon className="w-4 h-4" />
+                        {meme.likes}
+                      </button>
                       {user?.role === 'ADMIN' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDelete(meme.id); }}
                           className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-                          title="Удалить"
+                          title="В корзину"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -664,19 +701,19 @@ const Memes = () => {
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 flex justify-between items-center border-b dark:border-gray-700">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 truncate">{selectedMeme.title}</h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex-shrink-0"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-4 flex justify-center items-center bg-gray-50 dark:bg-gray-900/50 min-h-[200px]">
+            <div className="p-4 flex justify-center items-center bg-gray-50 dark:bg-gray-900/50 min-h-[200px] overflow-auto">
               {isVideo(selectedMeme.imageUrl) ? (
                 <video
                   src={selectedMeme.imageUrl}
@@ -688,6 +725,31 @@ const Memes = () => {
                 <img src={selectedMeme.imageUrl} alt={selectedMeme.title} className="max-w-full max-h-[70vh] rounded" />
               )}
             </div>
+
+            {/* Кнопки модерации для pending-мема */}
+            {showModerationInModal && (
+              <div className="px-4 pt-3 border-t dark:border-gray-700 flex flex-wrap gap-2">
+                <button
+                  onClick={async () => {
+                    await handleApprove(selectedMeme.id);
+                    setSelectedMeme(null);
+                  }}
+                  className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                >
+                  <CheckIcon className="w-4 h-4" /> Одобрить
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleReject(selectedMeme.id);
+                    setSelectedMeme(null);
+                  }}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                >
+                  <XCircleIcon className="w-4 h-4" /> Отклонить
+                </button>
+              </div>
+            )}
+
             <div className="p-4 border-t dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 flex flex-wrap gap-4">
               <span className="flex items-center gap-1">
                 <UserIcon className="w-4 h-4" />
@@ -708,10 +770,6 @@ const Memes = () => {
               <span className="flex items-center gap-1">
                 <HeartIcon className="w-4 h-4 text-red-500" />
                 {selectedMeme.likes}
-              </span>
-              <span className="flex items-center gap-1">
-                <HandThumbDownIcon className="w-4 h-4 text-gray-500" />
-                {selectedMeme.dislikes}
               </span>
             </div>
           </div>
