@@ -2,7 +2,12 @@
 node_modules/
 npm-debug.log*
 .env
-.DS_Store
+.env.*
+!.env.example
+.eslintcache
+*.tsbuildinfo
+
+# Builds
 dist/
 build/
 
@@ -10,14 +15,25 @@ build/
 *.pid
 *.log
 
-# IDE
+# IDE / AI tools
 .vscode/
 .idea/
 *.swp
 *.swo
+.claude/
+.windsurf/
+.cursor/
 
 # OS
 Thumbs.db
+.DS_Store
 
 # Files
 /docs/
+
+# Uploads (пользовательские файлы, не коммитим)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Docker images / sandbox
+backend/sandbox-images/
