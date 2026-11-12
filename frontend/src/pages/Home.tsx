@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Layout from '../components/Layout';
 import LatestNews from '../components/LatestNews';
+import SupportCard from '../components/SupportCard';
 import {
   BookOpenIcon,
   AcademicCapIcon,
@@ -94,7 +95,7 @@ const Home = () => {
     );
   }
 
-  // Авторизованная версия (оставляем как есть, она уже хороша)
+  // Авторизованная версия
   return (
     <Layout>
       <div className="space-y-8">
@@ -123,6 +124,9 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+        {/* Плашка поддержки проекта */}
+        <SupportCard />
 
         {/* Карточки действий */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
