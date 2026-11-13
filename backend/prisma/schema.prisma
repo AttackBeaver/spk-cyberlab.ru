@@ -38,6 +38,7 @@ model User {
   bugReports             BugReport[]            @relation("UserBugReports")
   bugReportsResponded    BugReport[]            @relation("ResponderBugReports")
   memeVotes              MemeVote[]
+  newsVotes              NewsVote[]
   // === Добавлено для полигона ===
   sandboxTasksCreated    SandboxTask[] // задания, созданные преподавателем/админом
   sandboxAttempts        SandboxAttempt[] // попытки выполнения заданий студентом
@@ -238,15 +239,24 @@ model Log {
 }
 
 model News {
-  id        Int      @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   title     String
-  content   String
-  imageUrl  String?
-  published Boolean  @default(false)
+  content   String      // Markdown (рендерится на фронте через react-markdown)
+  imageUrl  String?     // LEGACY: одиночная обложка. Если null — берём первое медиа из NewsMedia
+  published Boolean     @default(false)
   authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  author    User        @relation(fields: [authorId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // === Добавлено: лайки + медиа-галерея ===
+  likes     Int         @default(0)   // денормализованный счётчик (только лайки)
+  votes     NewsVote[]
+  media     NewsMedia[]
+
+  @@index([published])
+  @@index([createdAt])
+  @@index([likes])
 }
 
 model BugReport {
@@ -314,6 +324,39 @@ model MemeVote {
 enum VoteType {
   LIKE
   DISLIKE
+}
+
+// ===== Лайки новостей =====
+
+model NewsVote {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  newsId    Int
+  news      News     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, newsId])
+  @@index([newsId])
+}
+
+// ===== Медиа-галерея новостей =====
+
+enum NewsMediaType {
+  IMAGE
+  VIDEO
+}
+
+model NewsMedia {
+  id        Int           @id @default(autoincrement())
+  newsId    Int
+  news      News          @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  url       String        // /uploads/news/<uuid>.<ext>
+  type      NewsMediaType
+  order     Int           @default(0)  // порядок в галерее
+  createdAt DateTime      @default(now())
+
+  @@index([newsId, order])
 }
 
 // ===== Полигон-песочница =====

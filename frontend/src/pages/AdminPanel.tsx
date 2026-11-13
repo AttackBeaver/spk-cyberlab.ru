@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
-import { useDropzone } from 'react-dropzone';
+import NewsForm, { type NewsFormData } from '../components/NewsForm';
 import {
   UserGroupIcon, UserIcon, AcademicCapIcon, BookOpenIcon,
   NewspaperIcon, ShieldCheckIcon, PlusCircleIcon, TrashIcon,
-  PencilSquareIcon, ArrowPathIcon, CheckIcon, PhotoIcon,
+  PencilSquareIcon, ArrowPathIcon, CheckIcon,
   DocumentTextIcon, FaceSmileIcon, ArrowDownTrayIcon,
   ArrowUturnLeftIcon, XCircleIcon,
   HeartIcon, HandThumbDownIcon,
 } from '@heroicons/react/24/outline';
 
+// ============================================================================
+// Типы
+// ============================================================================
 interface Group {
   id: number;
   name: string;
@@ -35,15 +38,23 @@ interface Course {
   teacher: { id: number; fullName: string };
   createdAt: string;
 }
+interface NewsMediaItem {
+  id: number;
+  url: string;
+  type: 'IMAGE' | 'VIDEO';
+  order: number;
+}
 interface NewsItem {
   id: number;
   title: string;
   content: string;
   imageUrl: string | null;
   published: boolean;
+  likes: number;
   author: { fullName: string };
   createdAt: string;
   updatedAt: string;
+  media: NewsMediaItem[];
 }
 interface BugReport {
   id: number;
@@ -153,17 +164,12 @@ const AdminPanel = () => {
   const [editCourseTeacherId, setEditCourseTeacherId] = useState<number | null>(null);
   const [editCourseGroupIds, setEditCourseGroupIds] = useState<number[]>([]);
 
+  // ---- Новости ----
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsError, setNewsError] = useState('');
   const [showNewsForm, setShowNewsForm] = useState(false);
-  const [editingNewsId, setEditingNewsId] = useState<number | null>(null);
-  const [newsTitle, setNewsTitle] = useState('');
-  const [newsContent, setNewsContent] = useState('');
-  const [newsImageUrl, setNewsImageUrl] = useState('');
-  const [newsFormError, setNewsFormError] = useState('');
-  const [newsFormSuccess, setNewsFormSuccess] = useState('');
-  const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
+  const [isSavingNews, setIsSavingNews] = useState(false);
 
   const [bugLoading, setBugLoading] = useState(false);
   const [bugError, setBugError] = useState('');
@@ -465,44 +471,41 @@ const AdminPanel = () => {
     } catch (err) { const e = err as ApiError; showMessage(e.response?.data?.error || '❌ Ошибка обновления курса'); }
   };
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-    setNewsImagePreview(URL.createObjectURL(file));
-    setUploadingImage(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    try {
-      const res = await api.post('/news/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setNewsImageUrl(res.data.imageUrl);
-      showMessage('✅ Изображение загружено');
-    } catch (err) { const e = err as ApiError; showMessage(e.response?.data?.error || '❌ Ошибка загрузки изображения'); }
-    finally { setUploadingImage(false); }
-  }, []);
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop, accept: { 'image/*': [] }, maxSize: 5 * 1024 * 1024, multiple: false,
-  });
-
+  // ---- Новости ----
   const resetNewsForm = () => {
-    setNewsTitle(''); setNewsContent(''); setNewsImageUrl(''); setNewsImagePreview(null);
-    setEditingNewsId(null); setNewsFormError(''); setNewsFormSuccess(''); setShowNewsForm(false);
+    setShowNewsForm(false);
+    setEditingNews(null);
   };
   const handleEditNews = (item: NewsItem) => {
-    setEditingNewsId(item.id);
-    setNewsTitle(item.title); setNewsContent(item.content); setNewsImageUrl(item.imageUrl || '');
-    setNewsImagePreview(item.imageUrl || null);
-    setShowNewsForm(true); setNewsFormError(''); setNewsFormSuccess('');
+    setEditingNews(item);
+    setShowNewsForm(true);
   };
-  const handleSubmitNews = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNewsFormError(''); setNewsFormSuccess('');
-    if (!newsTitle || !newsContent) { setNewsFormError('Название и содержание обязательны'); return; }
+  const handleSaveNews = async (data: NewsFormData) => {
+    setIsSavingNews(true);
     try {
-      const payload = { title: newsTitle, content: newsContent, imageUrl: newsImageUrl || null };
-      if (editingNewsId) { await api.put(`/news/${editingNewsId}`, payload); setNewsFormSuccess('✅ Новость обновлена'); }
-      else { await api.post('/news', payload); setNewsFormSuccess('✅ Новость создана'); }
-      resetNewsForm(); await fetchNews();
-    } catch { setNewsFormError('Ошибка сохранения новости'); }
+      const payload = {
+        title: data.title,
+        content: data.content,
+        media: data.media,
+      };
+      if (editingNews) {
+        await api.put(`/news/${editingNews.id}`, payload);
+        showMessage('✅ Новость обновлена');
+      } else {
+        await api.post('/news', payload);
+        showMessage('✅ Новость создана');
+      }
+      resetNewsForm();
+      await fetchNews();
+    } catch (err) {
+      const e = err as ApiError;
+      throw new Error(
+        e.response?.data?.error || 'Ошибка сохранения новости',
+        { cause: err }
+      );
+    } finally {
+      setIsSavingNews(false);
+    }
   };
   const handleDeleteNews = async (id: number) => {
     if (!confirm('Удалить новость?')) return;
@@ -1165,54 +1168,23 @@ const AdminPanel = () => {
                 <PlusCircleIcon className="w-5 h-5" /> Создать новость
               </button>
             </div>
-            {newsFormSuccess && (<div className="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 text-green-800 dark:text-green-300 p-4 rounded-xl mb-4">{newsFormSuccess}</div>)}
-            {newsFormError && (<div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-800 dark:text-red-300 p-4 rounded-xl mb-4">{newsFormError}</div>)}
+
             {showNewsForm && (
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-100 dark:border-gray-700">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                   <NewspaperIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  {editingNewsId ? 'Редактировать новость' : 'Создать новость'}
+                  {editingNews ? 'Редактировать новость' : 'Создать новость'}
                 </h3>
-                <form onSubmit={handleSubmitNews} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Название</label>
-                    <input type="text" value={newsTitle} onChange={(e) => setNewsTitle(e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Содержание</label>
-                    <textarea value={newsContent} onChange={(e) => setNewsContent(e.target.value)} rows={5}
-                      className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Изображение</label>
-                    <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'}`}>
-                      <input {...getInputProps()} />
-                      {newsImagePreview ? (
-                        <div className="flex flex-col items-center">
-                          <img src={newsImagePreview} alt="Preview" className="max-h-48 object-contain mb-2 rounded" />
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Нажмите или перетащите, чтобы заменить</p>
-                        </div>
-                      ) : (
-                        <div>
-                          <PhotoIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                          <p className="text-gray-600 dark:text-gray-400">Перетащите изображение или нажмите для выбора</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, GIF, WebP до 5 МБ</p>
-                        </div>
-                      )}
-                    </div>
-                    {uploadingImage && <p className="text-sm text-blue-500 mt-1">Загрузка...</p>}
-                    {newsImageUrl && !newsImagePreview && (<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Текущее: {newsImageUrl}</p>)}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-1">
-                      <CheckIcon className="w-5 h-5" /> {editingNewsId ? 'Обновить' : 'Создать'}
-                    </button>
-                    <button type="button" onClick={resetNewsForm} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">Отмена</button>
-                  </div>
-                </form>
+                <NewsForm
+                  key={editingNews?.id ?? 'new'}
+                  initial={editingNews}
+                  onSave={handleSaveNews}
+                  onCancel={resetNewsForm}
+                  isSaving={isSavingNews}
+                />
               </div>
             )}
+
             {newsLoading ? (<div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>) : newsError ? (
               <div className="text-red-500 dark:text-red-400 text-center py-8">{newsError}</div>
             ) : news.length === 0 ? (
@@ -1222,24 +1194,41 @@ const AdminPanel = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {news.map((item) => (
-                  <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border border-gray-100 dark:border-gray-700 flex flex-wrap justify-between items-start gap-4 hover:shadow-lg transition">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">{item.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">{item.content}</p>
-                      {item.imageUrl && (<img src={item.imageUrl} alt={item.title} className="mt-2 h-24 w-auto object-cover rounded" />)}
-                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{item.author.fullName} • {new Date(item.createdAt).toLocaleDateString()}</div>
+                {news.map((item) => {
+                  const firstMedia = item.media[0];
+                  return (
+                    <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border border-gray-100 dark:border-gray-700 flex flex-wrap justify-between items-start gap-4 hover:shadow-lg transition">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">{item.title}</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">{item.content}</p>
+                        {firstMedia ? (
+                          firstMedia.type === 'VIDEO' ? (
+                            <video src={firstMedia.url} className="mt-2 h-24 w-auto object-cover rounded" muted />
+                          ) : (
+                            <img src={firstMedia.url} alt={item.title} className="mt-2 h-24 w-auto object-cover rounded" />
+                          )
+                        ) : item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.title} className="mt-2 h-24 w-auto object-cover rounded" />
+                        ) : null}
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          {item.author.fullName} • {new Date(item.createdAt).toLocaleDateString()}
+                          {item.media.length > 1 && (
+                            <span className="ml-2">• Медиа: {item.media.length}</span>
+                          )}
+                          <span className="ml-2">• ❤ {item.likes}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => handleEditNews(item)} className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center gap-1">
+                          <PencilSquareIcon className="w-4 h-4" /> Редактировать
+                        </button>
+                        <button onClick={() => handleDeleteNews(item.id)} className="text-red-600 dark:text-red-400 hover:underline text-sm flex items-center gap-1">
+                          <TrashIcon className="w-4 h-4" /> Удалить
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => handleEditNews(item)} className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center gap-1">
-                        <PencilSquareIcon className="w-4 h-4" /> Редактировать
-                      </button>
-                      <button onClick={() => handleDeleteNews(item.id)} className="text-red-600 dark:text-red-400 hover:underline text-sm flex items-center gap-1">
-                        <TrashIcon className="w-4 h-4" /> Удалить
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

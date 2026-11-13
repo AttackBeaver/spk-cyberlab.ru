@@ -1,17 +1,68 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { NewspaperIcon, CalendarDaysIcon, UserIcon } from '@heroicons/react/24/outline';
+import {
+  NewspaperIcon,
+  CalendarDaysIcon,
+  UserIcon,
+  HeartIcon,
+  PlayCircleIcon,
+} from '@heroicons/react/24/outline';
+
+// ============================================================================
+// Типы
+// ============================================================================
+type MediaType = 'IMAGE' | 'VIDEO';
+
+interface NewsMedia {
+  id: number;
+  url: string;
+  type: MediaType;
+  order: number;
+}
 
 interface NewsItem {
   id: number;
   title: string;
   content: string;
   imageUrl: string | null;
+  likes: number;
   createdAt: string;
   author: { fullName: string };
+  media: NewsMedia[];
 }
 
+// ============================================================================
+// Утилита: обрезать Markdown до чистого текста для превью
+// ============================================================================
+const stripMarkdown = (md: string): string => {
+  return md
+    // code-blocks ```...``` → убрать
+    .replace(/```[\s\S]*?```/g, ' ')
+    // inline `code` → убрать бэктики
+    .replace(/`([^`]+)`/g, '$1')
+    // изображения ![alt](url) → пусто
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    // ссылки [text](url) → text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    // заголовки (# ...), цитаты (> ...), списки (-, *, 1.) → убрать маркеры
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s{0,3}>\s?/gm, '')
+    .replace(/^\s{0,3}(?:[-*+]|\d+\.)\s+/gm, '')
+    // жирный/курсив/зачёркнутый → оставить текст
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/(\*|_)(.*?)\1/g, '$2')
+    .replace(/~~(.*?)~~/g, '$1')
+    // горизонтальные линии
+    .replace(/^\s{0,3}([-*_])\1{2,}\s*$/gm, '')
+    // множественные пробелы / переводы строк
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// ============================================================================
+// Компонент
+// ============================================================================
 const LatestNews = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,44 +119,75 @@ const LatestNews = () => {
       </div>
 
       <div className="space-y-5">
-        {news.map((item) => (
-          <div
-            key={item.id}
-            className="group flex flex-col sm:flex-row gap-4 border-b border-gray-100 dark:border-gray-700 last:border-0 pb-4 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg transition -mx-2 px-2 py-2"
-          >
-            {item.imageUrl && (
-              <div className="sm:w-28 flex-shrink-0">
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm group-hover:shadow-md transition"
-                />
+        {news.map((item) => {
+          const firstMedia = item.media[0];
+          const preview = firstMedia
+            ? { url: firstMedia.url, type: firstMedia.type }
+            : item.imageUrl
+              ? { url: item.imageUrl, type: 'IMAGE' as MediaType }
+              : null;
+
+          const plainContent = stripMarkdown(item.content);
+
+          return (
+            <Link
+              key={item.id}
+              to="/news"
+              className="group flex flex-col sm:flex-row gap-4 border-b border-gray-100 dark:border-gray-700 last:border-0 pb-4 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg transition -mx-2 px-2 py-2"
+            >
+              {preview && (
+                <div className="sm:w-28 flex-shrink-0 relative">
+                  {preview.type === 'IMAGE' ? (
+                    <img
+                      src={preview.url}
+                      alt={item.title}
+                      loading="lazy"
+                      className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm group-hover:shadow-md transition"
+                    />
+                  ) : (
+                    <>
+                      <video
+                        src={preview.url}
+                        preload="metadata"
+                        muted
+                        className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 rounded-lg transition-colors pointer-events-none">
+                        <PlayCircleIcon className="w-8 h-8 text-white drop-shadow-lg" />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition line-clamp-1">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
+                  {plainContent}
+                </p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 dark:text-gray-500 mt-2">
+                  <span className="flex items-center gap-1">
+                    <CalendarDaysIcon className="w-3.5 h-3.5" />
+                    {new Date(item.createdAt).toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <UserIcon className="w-3.5 h-3.5" />
+                    {item.author.fullName}
+                  </span>
+                  <span className="flex items-center gap-1 text-red-500 dark:text-red-400">
+                    <HeartIcon className="w-3.5 h-3.5" />
+                    {item.likes}
+                  </span>
+                </div>
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition line-clamp-1">
-                {item.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
-                {item.content}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 dark:text-gray-500 mt-2">
-                <span className="flex items-center gap-1">
-                  <CalendarDaysIcon className="w-3.5 h-3.5" />
-                  {new Date(item.createdAt).toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </span>
-                <span className="flex items-center gap-1">
-                  <UserIcon className="w-3.5 h-3.5" />
-                  {item.author.fullName}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
